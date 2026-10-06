@@ -12,9 +12,6 @@ ADD COLUMN "equipment_vehicle" TEXT;
 CREATE UNIQUE INDEX "daily_schedules_schedule_date_foreman_employee_id_key"
 ON "daily_schedules"("schedule_date", "foreman_employee_id");
 
-CREATE UNIQUE INDEX "daily_schedules_schedule_date_driver_employee_id_key"
-ON "daily_schedules"("schedule_date", "driver_employee_id");
-
 CREATE INDEX "daily_schedules_driver_employee_id_idx"
 ON "daily_schedules"("driver_employee_id");
 
