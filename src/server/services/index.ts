@@ -26,6 +26,7 @@ export {
   loadLabourDetail,
   loadLaboursPage,
   loadProjectDetail,
+  loadProjectOptions,
   loadProjectsPage,
   loadResourcePool,
   loadScheduleDay,

@@ -80,6 +80,18 @@ export async function listProjects({
   });
 }
 
+export async function listProjectOptions() {
+  return prisma.project.findMany({
+    select: {
+      projectName: true,
+      jobNo: true,
+      soNo: true,
+    },
+    orderBy: [{ projectName: "asc" }, { jobNo: "asc" }],
+    take: 2000,
+  });
+}
+
 export async function countProjects(search?: string) {
   return prisma.project.count({
     where: buildProjectWhere(search),

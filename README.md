@@ -132,7 +132,7 @@ Changing an employee ID updates related schedule references through the configur
 
 ### Daily Schedule
 
-The Daily Schedule workspace currently provides the scheduling foundation:
+The Daily Schedule workspace provides:
 
 - previous/next day navigation
 - native date selection
@@ -142,15 +142,19 @@ The Daily Schedule workspace currently provides the scheduling foundation:
 - project, foreman, labour, timing, and daily-target board columns
 - add/remove draft rows
 - persisted schedule-row deletion
-- unsaved-change protection for browser unload, internal links, and date changes
+- selected-row state
+- searchable project selection by project name, job number, or SO number
+- selected project metadata in draft rows
+- duplicate-project prevention across saved and draft rows for the same date
 - sticky desktop resource-pool shell
 - mobile resource-pool sheet
 - available/assigned employee summary
+- unsaved-change protection
 - empty-day state
 - loading skeleton
 - daily project/labour/foreman summary
 
-Draft rows are intentionally not persisted until their required project and resource fields are available in the following scheduling groups.
+Project selection is implemented with the shadcn Popover + Command combobox pattern. A draft schedule remains unsaved until Group 8 supplies the required foreman.
 
 ## Shared data layer
 

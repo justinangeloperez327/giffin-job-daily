@@ -10,6 +10,7 @@ export {
   countProjects,
   getProjectByJobNo,
   getProjectDetailByJobNo,
+  listProjectOptions,
   listProjects,
   type ProjectListOptions,
 } from "@/server/repositories/projects";

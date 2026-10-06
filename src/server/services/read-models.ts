@@ -21,6 +21,7 @@ import {
   listDailySchedulesByDate,
   listLabourDesignations,
   listLabours,
+  listProjectOptions,
   listProjects,
 } from "@/server/repositories";
 import { getResourceAvailability } from "@/server/services/availability";
@@ -90,6 +91,14 @@ export async function loadProjectsPage(
       sort,
       order,
     });
+  } catch (error) {
+    return actionFailure(mapDatabaseError(error));
+  }
+}
+
+export async function loadProjectOptions() {
+  try {
+    return actionSuccess(await listProjectOptions());
   } catch (error) {
     return actionFailure(mapDatabaseError(error));
   }

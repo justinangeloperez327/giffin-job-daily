@@ -29,6 +29,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  ProjectSelector,
+  type ScheduleProjectOption,
+} from "@/features/daily-schedule/project-selector";
 import { shiftScheduleDate } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +58,7 @@ export type ResourcePoolSummary = {
 
 type DraftRow = {
   id: string;
+  projectJobNo: string | null;
 };
 
 const SAVED_ROW_PREFIX = "saved:";
@@ -181,12 +186,16 @@ export function DailyScheduleBoard({
   selectedDate,
   today,
   initialSchedules,
+  projects,
+  projectError,
   resourceSummary,
   resourceError,
 }: {
   selectedDate: string;
   today: string;
   initialSchedules: ScheduleBoardRow[];
+  projects: ScheduleProjectOption[];
+  projectError?: string;
   resourceSummary: ResourcePoolSummary;
   resourceError?: string;
 }) {
@@ -299,7 +308,7 @@ export function DailyScheduleBoard({
   function addDraftRow() {
     const id = `draft-${nextDraftId.current}`;
     nextDraftId.current += 1;
-    setDraftRows((rows) => [...rows, { id }]);
+    setDraftRows((rows) => [...rows, { id, projectJobNo: null }]);
     setSelectedRowKey(id);
   }
 
@@ -309,6 +318,28 @@ export function DailyScheduleBoard({
     if (selectedRowKey === id) {
       setSelectedRowKey(firstSavedKey);
     }
+  }
+
+  function selectDraftProject(id: string, projectJobNo: string) {
+    setDraftRows((rows) =>
+      rows.map((row) =>
+        row.id === id ? { ...row, projectJobNo } : row,
+      ),
+    );
+    setSelectedRowKey(id);
+  }
+
+  function blockedProjectJobNos(currentDraftId: string) {
+    return [
+      ...initialSchedules.map((schedule) => schedule.projectJobNo),
+      ...draftRows
+        .filter(
+          (row) =>
+            row.id !== currentDraftId &&
+            row.projectJobNo !== null,
+        )
+        .map((row) => row.projectJobNo as string),
+    ];
   }
 
   function removeSavedSchedule(projectJobNo: string, projectName: string) {
@@ -350,13 +381,22 @@ export function DailyScheduleBoard({
             schedule.projectJobNo ===
             selectedRowKey.slice(SAVED_ROW_PREFIX.length),
         )?.projectName
-      : "New project row"
+      : (() => {
+          const draft = draftRows.find((row) => row.id === selectedRowKey);
+          const project = projects.find(
+            (item) => item.jobNo === draft?.projectJobNo,
+          );
+          return project?.projectName ?? "New project row";
+        })()
     : undefined;
 
   const totalLabours = initialSchedules.reduce(
     (sum, schedule) => sum + schedule.labourCount,
     0,
   );
+  const selectedProjectCount = draftRows.filter(
+    (row) => row.projectJobNo !== null,
+  ).length;
 
   return (
     <div className="space-y-4">
@@ -421,7 +461,11 @@ export function DailyScheduleBoard({
             </SheetContent>
           </Sheet>
 
-          <Button variant="outline" onClick={addDraftRow}>
+          <Button
+            variant="outline"
+            onClick={addDraftRow}
+            disabled={projects.length === 0}
+          >
             <Plus className="size-4" />
             Add Project
           </Button>
@@ -429,9 +473,9 @@ export function DailyScheduleBoard({
           <Button
             disabled
             title={
-              hasUnsavedChanges
-                ? "Complete the required project and resource fields before saving."
-                : "No unsaved schedule changes."
+              selectedProjectCount > 0
+                ? "Assign a foreman before saving the new schedule row."
+                : "Select a project and foreman before saving."
             }
           >
             <Save className="size-4" />
@@ -439,6 +483,12 @@ export function DailyScheduleBoard({
           </Button>
         </div>
       </div>
+
+      {projectError ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          Projects could not be loaded: {projectError}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 overflow-hidden rounded-lg border bg-card">
@@ -466,10 +516,16 @@ export function DailyScheduleBoard({
                     No projects scheduled for this day
                   </p>
                   <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    Add a project row to begin planning resources for{" "}
-                    {displayDate(selectedDate)}.
+                    {projects.length > 0
+                      ? `Add a project row to begin planning resources for ${displayDate(selectedDate)}.`
+                      : "Add projects in the Projects module before creating a daily schedule."}
                   </p>
-                  <Button className="mt-4" variant="outline" onClick={addDraftRow}>
+                  <Button
+                    className="mt-4"
+                    variant="outline"
+                    onClick={addDraftRow}
+                    disabled={projects.length === 0}
+                  >
                     <Plus className="size-4" />
                     Add Project
                   </Button>
@@ -573,23 +629,19 @@ export function DailyScheduleBoard({
                           selected && "bg-accent/35",
                         )}
                       >
-                        <div className="relative px-3 py-3 pr-10">
-                          <button
-                            type="button"
-                            className="block w-full rounded-md border border-dashed px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            aria-pressed={selected}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setSelectedRowKey(row.id);
-                            }}
-                          >
-                            <span className="block text-sm font-medium">
-                              Select project
-                            </span>
-                            <span className="mt-1 block text-xs text-muted-foreground">
-                              Project selection is required before saving.
-                            </span>
-                          </button>
+                        <div
+                          className="relative px-3 py-3 pr-10"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <ProjectSelector
+                            projects={projects}
+                            value={row.projectJobNo}
+                            disabledJobNos={blockedProjectJobNos(row.id)}
+                            onValueChange={(jobNo) =>
+                              selectDraftProject(row.id, jobNo)
+                            }
+                            error={projectError}
+                          />
                           <Button
                             variant="ghost"
                             size="icon"
@@ -603,9 +655,17 @@ export function DailyScheduleBoard({
                             <Trash2 className="size-4" />
                           </Button>
                         </div>
-                        <div className="px-3 py-3 text-sm text-muted-foreground">
+
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedRowKey(row.id);
+                          }}
+                          className="px-3 py-3 text-left text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                        >
                           Not selected
-                        </div>
+                        </button>
                         <div className="px-3 py-3 text-sm text-muted-foreground">
                           0 assigned
                         </div>
@@ -625,9 +685,11 @@ export function DailyScheduleBoard({
 
           <div className="flex flex-col gap-2 border-t px-3 py-2.5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <span>
-              {initialSchedules.length}{" "}
-              {initialSchedules.length === 1 ? "project" : "projects"} ·{" "}
-              {totalLabours} labour · {initialSchedules.length} foremen
+              {initialSchedules.length + selectedProjectCount}{" "}
+              {initialSchedules.length + selectedProjectCount === 1
+                ? "project"
+                : "projects"}{" "}
+              · {totalLabours} labour · {initialSchedules.length} foremen
             </span>
             {hasUnsavedChanges ? (
               <span className="font-medium text-foreground">

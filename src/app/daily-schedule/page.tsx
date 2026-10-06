@@ -4,12 +4,14 @@ import {
   type ResourcePoolSummary,
   type ScheduleBoardRow,
 } from "@/features/daily-schedule/daily-schedule-board";
+import type { ScheduleProjectOption } from "@/features/daily-schedule/project-selector";
 import {
   formatTimeValue,
   getScheduleDateInTimeZone,
 } from "@/lib/date-time";
 import { scheduleDateSchema } from "@/lib/validation/common";
 import {
+  loadProjectOptions,
   loadResourcePool,
   loadScheduleDay,
 } from "@/server/services/read-models";
@@ -32,9 +34,10 @@ export default async function DailySchedulePage({
   const parsedDate = scheduleDateSchema.safeParse(requestedDate);
   const selectedDate = parsedDate.success ? parsedDate.data : today;
 
-  const [scheduleResult, resourceResult] = await Promise.all([
+  const [scheduleResult, resourceResult, projectResult] = await Promise.all([
     loadScheduleDay({ scheduleDate: selectedDate }),
     loadResourcePool({ scheduleDate: selectedDate }),
+    loadProjectOptions(),
   ]);
 
   if (!scheduleResult.ok) {
@@ -81,6 +84,10 @@ export default async function DailySchedulePage({
         assigned: 0,
       };
 
+  const projects: ScheduleProjectOption[] = projectResult.ok
+    ? projectResult.data
+    : [];
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -92,6 +99,8 @@ export default async function DailySchedulePage({
         selectedDate={selectedDate}
         today={today}
         initialSchedules={schedules}
+        projects={projects}
+        projectError={projectResult.ok ? undefined : projectResult.error.message}
         resourceSummary={resourceSummary}
         resourceError={resourceResult.ok ? undefined : resourceResult.error.message}
       />
