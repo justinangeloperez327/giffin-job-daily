@@ -44,6 +44,8 @@ function displayTiming(
   return [camp ? `Camp ${camp}` : null, work].filter(Boolean).join(" · ");
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function ProjectDetailPage({
   params,
 }: {

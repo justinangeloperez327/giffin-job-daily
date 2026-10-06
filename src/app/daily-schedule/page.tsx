@@ -22,6 +22,8 @@ function firstQueryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function DailySchedulePage({
   searchParams,
 }: {
