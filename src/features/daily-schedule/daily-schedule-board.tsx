@@ -200,6 +200,7 @@ export function DailyScheduleBoard({
 }) {
   const router = useRouter();
   const nextDraftId = useRef(1);
+  const previousDateRef = useRef(selectedDate);
   const firstSavedKey = initialSchedules[0]
     ? savedRowKey(initialSchedules[0].projectJobNo)
     : null;
@@ -214,8 +215,14 @@ export function DailyScheduleBoard({
   const hasUnsavedChanges = draftRows.length > 0 || dirtySavedCount > 0;
 
   useEffect(() => {
-    setSelectedRowKey(firstSavedKey);
+    if (previousDateRef.current === selectedDate) {
+      return;
+    }
+
+    previousDateRef.current = selectedDate;
+    setDraftRows([]);
     setSavedEdits({});
+    setSelectedRowKey(firstSavedKey);
   }, [selectedDate, firstSavedKey]);
 
   useEffect(() => {
@@ -223,7 +230,7 @@ export function DailyScheduleBoard({
       return;
     }
 
-    const prompt = "Discard the unsaved schedule row(s) and continue?";
+    const prompt = "Discard the unsaved schedule changes and continue?";
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
@@ -284,7 +291,7 @@ export function DailyScheduleBoard({
   function confirmDiscardChanges() {
     return (
       !hasUnsavedChanges ||
-      window.confirm("Discard the unsaved schedule row(s) and change date?")
+      window.confirm("Discard the unsaved schedule changes and change date?")
     );
   }
 
