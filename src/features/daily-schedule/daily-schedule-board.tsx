@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   type ChangeEvent,
+  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
@@ -56,6 +57,12 @@ type DraftRow = {
   id: string;
 };
 
+const SAVED_ROW_PREFIX = "saved:";
+
+function savedRowKey(projectJobNo: string) {
+  return `${SAVED_ROW_PREFIX}${projectJobNo}`;
+}
+
 function displayDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
@@ -69,9 +76,11 @@ function displayDate(value: string) {
 function ResourcePoolPanel({
   summary,
   error,
+  selectedLabel,
 }: {
   summary: ResourcePoolSummary;
   error?: string;
+  selectedLabel?: string;
 }) {
   const [tab, setTab] = useState<"foremen" | "labours">("foremen");
 
@@ -120,13 +129,20 @@ function ResourcePoolPanel({
             <p className="text-sm font-medium">Resource pool unavailable</p>
             <p className="mt-1 text-xs text-muted-foreground">{error}</p>
           </>
+        ) : selectedLabel ? (
+          <>
+            <p className="text-sm font-medium">{selectedLabel}</p>
+            <p className="mt-1 max-w-56 text-xs text-muted-foreground">
+              {tab === "foremen"
+                ? "Foreman resources for this schedule row will appear here."
+                : "Labour search, filtering, and bulk assignment for this schedule row will appear here."}
+            </p>
+          </>
         ) : (
           <>
             <p className="text-sm font-medium">Select a schedule row</p>
             <p className="mt-1 max-w-56 text-xs text-muted-foreground">
-              {tab === "foremen"
-                ? "Foreman assignment will use this panel for the selected project."
-                : "Labour search, filtering, and bulk assignment will use this panel for the selected project."}
+              Choose a project row before assigning resources.
             </p>
           </>
         )}
@@ -177,10 +193,20 @@ export function DailyScheduleBoard({
 }) {
   const router = useRouter();
   const nextDraftId = useRef(1);
+  const firstSavedKey = initialSchedules[0]
+    ? savedRowKey(initialSchedules[0].projectJobNo)
+    : null;
   const [draftRows, setDraftRows] = useState<DraftRow[]>([]);
+  const [selectedRowKey, setSelectedRowKey] = useState<string | null>(
+    firstSavedKey,
+  );
   const [deletingJobNo, setDeletingJobNo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const hasUnsavedChanges = draftRows.length > 0;
+
+  useEffect(() => {
+    setSelectedRowKey(firstSavedKey);
+  }, [selectedDate, firstSavedKey]);
 
   useEffect(() => {
     if (!hasUnsavedChanges) {
@@ -275,10 +301,25 @@ export function DailyScheduleBoard({
     const id = `draft-${nextDraftId.current}`;
     nextDraftId.current += 1;
     setDraftRows((rows) => [...rows, { id }]);
+    setSelectedRowKey(id);
   }
 
   function removeDraftRow(id: string) {
     setDraftRows((rows) => rows.filter((row) => row.id !== id));
+
+    if (selectedRowKey === id) {
+      setSelectedRowKey(firstSavedKey);
+    }
+  }
+
+  function selectRowFromKeyboard(
+    event: KeyboardEvent<HTMLDivElement>,
+    rowKey: string,
+  ) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setSelectedRowKey(rowKey);
+    }
   }
 
   function removeSavedSchedule(projectJobNo: string, projectName: string) {
@@ -304,10 +345,24 @@ export function DailyScheduleBoard({
         return;
       }
 
+      if (selectedRowKey === savedRowKey(projectJobNo)) {
+        setSelectedRowKey(null);
+      }
+
       toast.success("Schedule row removed.");
       router.refresh();
     });
   }
+
+  const selectedLabel = selectedRowKey
+    ? selectedRowKey.startsWith(SAVED_ROW_PREFIX)
+      ? initialSchedules.find(
+          (schedule) =>
+            schedule.projectJobNo ===
+            selectedRowKey.slice(SAVED_ROW_PREFIX.length),
+        )?.projectName
+      : "New project row"
+    : undefined;
 
   const totalLabours = initialSchedules.reduce(
     (sum, schedule) => sum + schedule.labourCount,
@@ -372,6 +427,7 @@ export function DailyScheduleBoard({
               <ResourcePoolPanel
                 summary={resourceSummary}
                 error={resourceError}
+                selectedLabel={selectedLabel}
               />
             </SheetContent>
           </Sheet>
@@ -431,105 +487,134 @@ export function DailyScheduleBoard({
                 </div>
               ) : (
                 <div className="divide-y">
-                  {initialSchedules.map((row) => (
-                    <div
-                      key={row.projectJobNo}
-                      className="grid min-h-28 grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr]"
-                    >
-                      <div className="relative px-3 py-3 pr-10">
-                        <p className="text-sm font-medium">{row.projectName}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Job {row.projectJobNo} · SO {row.soNo}
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
-                          disabled={pending && deletingJobNo === row.projectJobNo}
-                          onClick={() =>
-                            removeSavedSchedule(
-                              row.projectJobNo,
-                              row.projectName,
-                            )
-                          }
-                          aria-label={`Remove ${row.projectName} from schedule`}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
+                  {initialSchedules.map((row) => {
+                    const rowKey = savedRowKey(row.projectJobNo);
+                    const selected = selectedRowKey === rowKey;
 
-                      <div className="px-3 py-3">
-                        <p className="text-sm">{row.foremanName}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {row.foremanEmployeeId}
-                        </p>
-                      </div>
-
-                      <div className="px-3 py-3">
-                        <p className="text-sm font-medium">
-                          {row.labourCount} assigned
-                        </p>
-                        {row.labourNames.length > 0 ? (
-                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                            {row.labourNames.join(", ")}
-                          </p>
-                        ) : (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            No labour assigned
-                          </p>
+                    return (
+                      <div
+                        key={row.projectJobNo}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={selected}
+                        onClick={() => setSelectedRowKey(rowKey)}
+                        onKeyDown={(event) =>
+                          selectRowFromKeyboard(event, rowKey)
+                        }
+                        className={cn(
+                          "grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                          selected && "bg-accent/35",
                         )}
-                      </div>
-
-                      <div className="px-3 py-3">
-                        <TimingCell row={row} />
-                      </div>
-
-                      <div className="px-3 py-3">
-                        <p className="whitespace-pre-wrap text-sm">
-                          {row.dailyTarget ?? (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-
-                  {draftRows.map((row) => (
-                    <div
-                      key={row.id}
-                      className="grid min-h-28 grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] bg-muted/10"
-                    >
-                      <div className="relative px-3 py-3 pr-10">
-                        <div className="rounded-md border border-dashed px-3 py-2">
-                          <p className="text-sm font-medium">Select project</p>
+                      >
+                        <div className="relative px-3 py-3 pr-10">
+                          <p className="text-sm font-medium">{row.projectName}</p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Project selection is required before saving.
+                            Job {row.projectJobNo} · SO {row.soNo}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
+                            disabled={pending}
+                            onClick={() =>
+                              removeSavedSchedule(
+                                row.projectJobNo,
+                                row.projectName,
+                              )
+                            }
+                            aria-label={`Remove ${row.projectName} from schedule`}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+
+                        <div className="px-3 py-3">
+                          <p className="text-sm">{row.foremanName}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {row.foremanEmployeeId}
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => removeDraftRow(row.id)}
-                          aria-label="Remove draft schedule row"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+
+                        <div className="px-3 py-3">
+                          <p className="text-sm font-medium">
+                            {row.labourCount} assigned
+                          </p>
+                          {row.labourNames.length > 0 ? (
+                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                              {row.labourNames.join(", ")}
+                            </p>
+                          ) : (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              No labour assigned
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="px-3 py-3">
+                          <TimingCell row={row} />
+                        </div>
+
+                        <div className="px-3 py-3">
+                          <p className="whitespace-pre-wrap text-sm">
+                            {row.dailyTarget ?? (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div className="px-3 py-3 text-sm text-muted-foreground">
-                        Not selected
+                    );
+                  })}
+
+                  {draftRows.map((row) => {
+                    const selected = selectedRowKey === row.id;
+
+                    return (
+                      <div
+                        key={row.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={selected}
+                        onClick={() => setSelectedRowKey(row.id)}
+                        onKeyDown={(event) =>
+                          selectRowFromKeyboard(event, row.id)
+                        }
+                        className={cn(
+                          "grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] bg-muted/10 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                          selected && "bg-accent/35",
+                        )}
+                      >
+                        <div className="relative px-3 py-3 pr-10">
+                          <div className="rounded-md border border-dashed px-3 py-2">
+                            <p className="text-sm font-medium">Select project</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Project selection is required before saving.
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeDraftRow(row.id)}
+                            aria-label="Remove draft schedule row"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                        <div className="px-3 py-3 text-sm text-muted-foreground">
+                          Not selected
+                        </div>
+                        <div className="px-3 py-3 text-sm text-muted-foreground">
+                          0 assigned
+                        </div>
+                        <div className="px-3 py-3 text-sm text-muted-foreground">
+                          —
+                        </div>
+                        <div className="px-3 py-3 text-sm text-muted-foreground">
+                          —
+                        </div>
                       </div>
-                      <div className="px-3 py-3 text-sm text-muted-foreground">
-                        0 assigned
-                      </div>
-                      <div className="px-3 py-3 text-sm text-muted-foreground">
-                        —
-                      </div>
-                      <div className="px-3 py-3 text-sm text-muted-foreground">
-                        —
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -556,6 +641,7 @@ export function DailyScheduleBoard({
           <ResourcePoolPanel
             summary={resourceSummary}
             error={resourceError}
+            selectedLabel={selectedLabel}
           />
         </aside>
       </div>
