@@ -6,7 +6,7 @@ Daily project and labour scheduling application built with Next.js, TypeScript, 
 
 - Next.js 16.3.8
 - React 19.3.0
-- TypeScript 7.0.2
+- TypeScript 7.0.2 compiler with TypeScript 6.0.2 compatibility API for ESLint
 - shadcn 4.21.1
 - Tailwind CSS 4.3.3
 - Prisma ORM 7.10.0
@@ -245,6 +245,7 @@ The application includes:
 - baseline content-type, framing, referrer, and browser-permission headers
 - explicit `DATABASE_URL` startup validation
 - GitHub Actions CI with PostgreSQL 18
+- TypeScript 7 compiler running side-by-side with the TypeScript 6 compatibility API required by current ESLint tooling
 - Prisma schema validation and migration deployment in CI
 - lint, TypeScript, unit-test, and production-build gates
 
