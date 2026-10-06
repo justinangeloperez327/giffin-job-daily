@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import {\n  dailyScheduleInputSchema,\n  labourReassignmentSchema,\n} from "@/lib/validation/schedule";
+import {
+  dailyScheduleInputSchema,
+  labourReassignmentSchema,
+} from "@/lib/validation/schedule";
 
 const validSchedule = {
   scheduleDate: "2026-10-06",
@@ -76,7 +79,6 @@ describe("daily schedule validation", () => {
     expect(result.success).toBe(false);
   });
 });
-
 
 describe("labour reassignment validation", () => {
   it("accepts moving labour between different projects", () => {
