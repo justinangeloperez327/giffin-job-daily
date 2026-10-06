@@ -30,6 +30,7 @@ export type DraftLabourAssignment = {
   projectJobNo: string | null;
   foremanEmployeeId: string | null;
   labourEmployeeIds: string[];
+  driverEmployeeId?: string | null;
 };
 
 function roleLabel(role: LabourRole) {
@@ -92,6 +93,14 @@ export function buildLabourOptions({
         if (draft.labourEmployeeIds.includes(resource.employeeId)) {
           return {
             role: "LABOUR" as const,
+            rowKey: draft.rowKey,
+            projectJobNo: draft.projectJobNo,
+          };
+        }
+
+        if (draft.driverEmployeeId === resource.employeeId) {
+          return {
+            role: "DRIVER" as const,
             rowKey: draft.rowKey,
             projectJobNo: draft.projectJobNo,
           };

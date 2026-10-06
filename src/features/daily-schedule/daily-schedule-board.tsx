@@ -2,6 +2,7 @@
 
 import {
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -34,8 +35,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { buildDriverOptions } from "@/features/daily-schedule/driver-options";
 import { ForemanSelector } from "@/features/daily-schedule/foreman-selector";
 import { buildForemanOptions } from "@/features/daily-schedule/foreman-options";
+import { LogisticsEditor } from "@/features/daily-schedule/logistics-editor";
+import {
+  logisticsEditableFieldsFrom,
+  type LogisticsEditableFields,
+} from "@/features/daily-schedule/logistics-fields";
 import {
   DailyTargetEditor,
   TimingEditor,
@@ -91,14 +98,17 @@ export type ScheduleResource = {
   }>;
 };
 
-type DraftRow = ScheduleEditableFields & {
+type ScheduleRowEditableFields =
+  ScheduleEditableFields & LogisticsEditableFields;
+
+type DraftRow = ScheduleRowEditableFields & {
   id: string;
   projectJobNo: string | null;
   foremanEmployeeId: string | null;
   labourEmployeeIds: string[];
 };
 
-type SavedScheduleEdits = Record<string, ScheduleEditableFields>;
+type SavedScheduleEdits = Record<string, ScheduleRowEditableFields>;
 
 const SAVED_ROW_PREFIX = "saved:";
 
@@ -206,6 +216,9 @@ export function DailyScheduleBoard({
     : null;
   const [draftRows, setDraftRows] = useState<DraftRow[]>([]);
   const [savedEdits, setSavedEdits] = useState<SavedScheduleEdits>({});
+  const [expandedLogisticsRows, setExpandedLogisticsRows] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(
     firstSavedKey,
   );
@@ -222,6 +235,7 @@ export function DailyScheduleBoard({
     previousDateRef.current = selectedDate;
     setDraftRows([]);
     setSavedEdits({});
+    setExpandedLogisticsRows(new Set());
     setSelectedRowKey(firstSavedKey);
   }, [selectedDate, firstSavedKey]);
 
@@ -302,6 +316,7 @@ export function DailyScheduleBoard({
 
     setDraftRows([]);
     setSavedEdits({});
+    setExpandedLogisticsRows(new Set());
     router.push(`/daily-schedule?date=${encodeURIComponent(date)}`);
   }
 
@@ -325,6 +340,8 @@ export function DailyScheduleBoard({
         startTime: "",
         endTime: "",
         dailyTarget: "",
+        driverEmployeeId: null,
+        equipmentVehicle: "",
       },
     ]);
     setSelectedRowKey(id);
@@ -353,6 +370,14 @@ export function DailyScheduleBoard({
                 row.projectJobNo === projectJobNo
                   ? row.labourEmployeeIds
                   : [],
+              driverEmployeeId:
+                row.projectJobNo === projectJobNo
+                  ? row.driverEmployeeId
+                  : null,
+              equipmentVehicle:
+                row.projectJobNo === projectJobNo
+                  ? row.equipmentVehicle
+                  : "",
             }
           : row,
       ),
@@ -362,34 +387,54 @@ export function DailyScheduleBoard({
 
   function updateDraftField(
     id: string,
-    field: keyof ScheduleEditableFields,
-    value: string,
+    field: keyof ScheduleRowEditableFields,
+    value: string | null,
   ) {
     setDraftRows((rows) =>
       rows.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
     );
   }
 
-  function editableFieldsForSaved(schedule: ScheduleBoardRow) {
+  function editableFieldsForSaved(
+    schedule: ScheduleBoardRow,
+  ): ScheduleRowEditableFields {
     return (
-      savedEdits[schedule.projectJobNo] ??
-      scheduleEditableFieldsFrom(schedule)
+      savedEdits[schedule.projectJobNo] ?? {
+        ...scheduleEditableFieldsFrom(schedule),
+        ...logisticsEditableFieldsFrom(schedule),
+      }
     );
   }
 
   function updateSavedField(
     schedule: ScheduleBoardRow,
-    field: keyof ScheduleEditableFields,
-    value: string,
+    field: keyof ScheduleRowEditableFields,
+    value: string | null,
   ) {
     setSavedEdits((current) => ({
       ...current,
       [schedule.projectJobNo]: {
-        ...(current[schedule.projectJobNo] ??
-          scheduleEditableFieldsFrom(schedule)),
+        ...(current[schedule.projectJobNo] ?? {
+          ...scheduleEditableFieldsFrom(schedule),
+          ...logisticsEditableFieldsFrom(schedule),
+        }),
         [field]: value,
       },
     }));
+  }
+
+  function toggleLogistics(rowKey: string) {
+    setExpandedLogisticsRows((current) => {
+      const next = new Set(current);
+
+      if (next.has(rowKey)) {
+        next.delete(rowKey);
+      } else {
+        next.add(rowKey);
+      }
+
+      return next;
+    });
   }
 
   function blockedProjectJobNos(currentDraftId: string) {
@@ -456,25 +501,47 @@ export function DailyScheduleBoard({
   }
 
   function selectedDriverForRow(rowKey: string | null) {
-    if (!rowKey?.startsWith(SAVED_ROW_PREFIX)) {
+    if (!rowKey) {
       return null;
     }
 
-    const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
-    return (
-      initialSchedules.find(
-        (schedule) => schedule.projectJobNo === projectJobNo,
-      )?.driverEmployeeId ?? null
-    );
+    if (rowKey.startsWith(SAVED_ROW_PREFIX)) {
+      const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
+      const schedule = initialSchedules.find(
+        (item) => item.projectJobNo === projectJobNo,
+      );
+
+      if (!schedule) {
+        return null;
+      }
+
+      return editableFieldsForSaved(schedule).driverEmployeeId;
+    }
+
+    return draftRows.find((row) => row.id === rowKey)?.driverEmployeeId ?? null;
   }
 
-  function draftResourceRows() {
-    return draftRows.map((row) => ({
+  function localResourceRows() {
+    const drafts = draftRows.map((row) => ({
       rowKey: row.id,
       projectJobNo: row.projectJobNo,
       foremanEmployeeId: row.foremanEmployeeId,
       labourEmployeeIds: row.labourEmployeeIds,
+      driverEmployeeId: row.driverEmployeeId,
     }));
+
+    const editedSavedRows = initialSchedules
+      .filter((schedule) => savedEdits[schedule.projectJobNo])
+      .map((schedule) => ({
+        rowKey: savedRowKey(schedule.projectJobNo),
+        projectJobNo: schedule.projectJobNo,
+        foremanEmployeeId: schedule.foremanEmployeeId,
+        labourEmployeeIds: schedule.labourEmployeeIds,
+        driverEmployeeId:
+          savedEdits[schedule.projectJobNo].driverEmployeeId,
+      }));
+
+    return [...drafts, ...editedSavedRows];
   }
 
   function foremanOptionsFor(
@@ -484,7 +551,7 @@ export function DailyScheduleBoard({
   ) {
     return buildForemanOptions({
       resources,
-      drafts: draftResourceRows(),
+      drafts: localResourceRows(),
       projects,
       currentRowKey: rowKey,
       projectJobNo,
@@ -502,7 +569,7 @@ export function DailyScheduleBoard({
   ) {
     return buildLabourOptions({
       resources,
-      drafts: draftResourceRows(),
+      drafts: localResourceRows(),
       currentRowKey: rowKey,
       projectJobNo,
       selectedLabourIds,
@@ -512,16 +579,38 @@ export function DailyScheduleBoard({
     });
   }
 
+  function driverOptionsFor(
+    rowKey: string,
+    projectJobNo: string | null,
+    selectedDriverId: string | null,
+    currentForemanId: string | null,
+    currentLabourIds: string[],
+  ) {
+    return buildDriverOptions({
+      resources,
+      localRows: localResourceRows(),
+      currentRowKey: rowKey,
+      projectJobNo,
+      selectedDriverId,
+      currentForemanId,
+      currentLabourIds,
+      savedRowKey,
+    });
+  }
+
   function schedulePayload(
     schedule: ScheduleBoardRow,
     changes: {
       foremanEmployeeId?: string;
       labourEmployeeIds?: string[];
-      editableFields?: ScheduleEditableFields;
+      editableFields?: ScheduleRowEditableFields;
     } = {},
   ) {
     const editable =
-      changes.editableFields ?? scheduleEditableFieldsFrom(schedule);
+      changes.editableFields ?? {
+        ...scheduleEditableFieldsFrom(schedule),
+        ...logisticsEditableFieldsFrom(schedule),
+      };
 
     return {
       scheduleDate: selectedDate,
@@ -532,8 +621,8 @@ export function DailyScheduleBoard({
       startTime: editable.startTime,
       endTime: editable.endTime,
       dailyTarget: editable.dailyTarget,
-      driverEmployeeId: schedule.driverEmployeeId ?? undefined,
-      equipmentVehicle: schedule.equipmentVehicle ?? undefined,
+      driverEmployeeId: editable.driverEmployeeId ?? undefined,
+      equipmentVehicle: editable.equipmentVehicle,
       labourEmployeeIds:
         changes.labourEmployeeIds ?? schedule.labourEmployeeIds,
     };
@@ -786,6 +875,8 @@ export function DailyScheduleBoard({
           startTime: row.startTime,
           endTime: row.endTime,
           dailyTarget: row.dailyTarget,
+          driverEmployeeId: row.driverEmployeeId ?? undefined,
+          equipmentVehicle: row.equipmentVehicle,
           labourEmployeeIds: row.labourEmployeeIds,
         });
 
@@ -1072,16 +1163,33 @@ export function DailyScheduleBoard({
                     const editableFields = editableFieldsForSaved(row);
                     const timingErrors =
                       validateTimingFields(editableFields);
+                    const driverOptions = driverOptionsFor(
+                      rowKey,
+                      row.projectJobNo,
+                      editableFields.driverEmployeeId,
+                      row.foremanEmployeeId,
+                      row.labourEmployeeIds,
+                    );
+                    const logisticsExpanded =
+                      expandedLogisticsRows.has(rowKey);
+                    const selectedDriver = resources.find(
+                      (resource) =>
+                        resource.employeeId ===
+                        editableFields.driverEmployeeId,
+                    );
 
                     return (
                       <div
                         key={row.projectJobNo}
-                        onClick={() => setSelectedRowKey(rowKey)}
                         className={cn(
-                          "grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] transition-colors",
+                          "transition-colors",
                           selected && "bg-accent/35",
                         )}
                       >
+                        <div
+                          onClick={() => setSelectedRowKey(rowKey)}
+                          className="grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr]"
+                        >
                         <div className="relative px-3 py-3 pr-10">
                           <button
                             type="button"
@@ -1170,6 +1278,69 @@ export function DailyScheduleBoard({
                             }
                           />
                         </div>
+                        </div>
+
+                        <div className="border-t border-dashed">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedRowKey(rowKey);
+                              toggleLogistics(rowKey);
+                            }}
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-muted/40"
+                          >
+                            <span className="flex items-center gap-2 font-medium">
+                              Logistics
+                              {selectedDriver || editableFields.equipmentVehicle ? (
+                                <span className="font-normal text-muted-foreground">
+                                  {selectedDriver?.employeeName ?? "No driver"}
+                                  {editableFields.equipmentVehicle
+                                    ? ` · ${editableFields.equipmentVehicle}`
+                                    : ""}
+                                </span>
+                              ) : (
+                                <span className="font-normal text-muted-foreground">
+                                  Optional
+                                </span>
+                              )}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "size-4 text-muted-foreground transition-transform",
+                                logisticsExpanded && "rotate-180",
+                              )}
+                            />
+                          </button>
+
+                          {logisticsExpanded ? (
+                            <div
+                              className="border-t bg-muted/10 px-3 py-3"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <LogisticsEditor
+                                driverOptions={driverOptions}
+                                driverEmployeeId={editableFields.driverEmployeeId}
+                                equipmentVehicle={editableFields.equipmentVehicle}
+                                disabled={pending}
+                                onDriverChange={(employeeId) =>
+                                  updateSavedField(
+                                    row,
+                                    "driverEmployeeId",
+                                    employeeId,
+                                  )
+                                }
+                                onEquipmentVehicleChange={(value) =>
+                                  updateSavedField(
+                                    row,
+                                    "equipmentVehicle",
+                                    value,
+                                  )
+                                }
+                              />
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     );
                   })}
@@ -1182,16 +1353,32 @@ export function DailyScheduleBoard({
                       row.foremanEmployeeId,
                     );
                     const timingErrors = validateTimingFields(row);
+                    const driverOptions = driverOptionsFor(
+                      row.id,
+                      row.projectJobNo,
+                      row.driverEmployeeId,
+                      row.foremanEmployeeId,
+                      row.labourEmployeeIds,
+                    );
+                    const logisticsExpanded =
+                      expandedLogisticsRows.has(row.id);
+                    const selectedDriver = resources.find(
+                      (resource) =>
+                        resource.employeeId === row.driverEmployeeId,
+                    );
 
                     return (
                       <div
                         key={row.id}
-                        onClick={() => setSelectedRowKey(row.id)}
                         className={cn(
-                          "grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] bg-muted/10 transition-colors",
+                          "bg-muted/10 transition-colors",
                           selected && "bg-accent/35",
                         )}
                       >
+                        <div
+                          onClick={() => setSelectedRowKey(row.id)}
+                          className="grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr]"
+                        >
                         <div
                           className="relative px-3 py-3 pr-10"
                           onClick={(event) => event.stopPropagation()}
@@ -1270,6 +1457,69 @@ export function DailyScheduleBoard({
                               updateDraftField(row.id, "dailyTarget", value)
                             }
                           />
+                        </div>
+                        </div>
+
+                        <div className="border-t border-dashed">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedRowKey(row.id);
+                              toggleLogistics(row.id);
+                            }}
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-muted/40"
+                          >
+                            <span className="flex items-center gap-2 font-medium">
+                              Logistics
+                              {selectedDriver || row.equipmentVehicle ? (
+                                <span className="font-normal text-muted-foreground">
+                                  {selectedDriver?.employeeName ?? "No driver"}
+                                  {row.equipmentVehicle
+                                    ? ` · ${row.equipmentVehicle}`
+                                    : ""}
+                                </span>
+                              ) : (
+                                <span className="font-normal text-muted-foreground">
+                                  Optional
+                                </span>
+                              )}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "size-4 text-muted-foreground transition-transform",
+                                logisticsExpanded && "rotate-180",
+                              )}
+                            />
+                          </button>
+
+                          {logisticsExpanded ? (
+                            <div
+                              className="border-t bg-background/40 px-3 py-3"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <LogisticsEditor
+                                driverOptions={driverOptions}
+                                driverEmployeeId={row.driverEmployeeId}
+                                equipmentVehicle={row.equipmentVehicle}
+                                disabled={!row.projectJobNo || pending}
+                                onDriverChange={(employeeId) =>
+                                  updateDraftField(
+                                    row.id,
+                                    "driverEmployeeId",
+                                    employeeId,
+                                  )
+                                }
+                                onEquipmentVehicleChange={(value) =>
+                                  updateDraftField(
+                                    row.id,
+                                    "equipmentVehicle",
+                                    value,
+                                  )
+                                }
+                              />
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     );

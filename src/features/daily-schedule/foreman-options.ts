@@ -16,6 +16,7 @@ export type DraftForemanAssignment = {
   projectJobNo: string | null;
   foremanEmployeeId: string | null;
   labourEmployeeIds: string[];
+  driverEmployeeId?: string | null;
 };
 
 export type ProjectReference = {
@@ -74,6 +75,7 @@ export function buildForemanOptions({
       const available =
         selected ||
         (!currentLabourBlock &&
+          !currentDriverBlock &&
           !databaseBlocker &&
           !draftBlocker &&
           Boolean(projectJobNo));
@@ -85,6 +87,8 @@ export function buildForemanOptions({
         statusLabel = "Selected";
       } else if (currentLabourBlock) {
         statusLabel = "Labour on this project";
+      } else if (currentDriverBlock) {
+        statusLabel = "Driver on this project";
       } else if (draftBlocker) {
         const project = projects.find((item) => item.jobNo === draftBlocker.projectJobNo);
         statusLabel = `${roleLabel(draftBlocker.role)} → ${project?.jobNo ?? "Draft"}`;
