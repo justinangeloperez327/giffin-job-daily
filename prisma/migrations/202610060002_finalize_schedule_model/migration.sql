@@ -9,6 +9,9 @@ ADD COLUMN "daily_target" TEXT,
 ADD COLUMN "driver_employee_id" TEXT,
 ADD COLUMN "equipment_vehicle" TEXT;
 
+CREATE INDEX "labours_designation_idx"
+ON "labours"("designation");
+
 CREATE UNIQUE INDEX "daily_schedules_schedule_date_foreman_employee_id_key"
 ON "daily_schedules"("schedule_date", "foreman_employee_id");
 
