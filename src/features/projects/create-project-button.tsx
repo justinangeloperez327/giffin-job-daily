@@ -6,8 +6,6 @@ import { FormEvent, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { createProjectAction } from "@/app/projects/actions";
-import { ProjectFormFields } from "@/features/projects/project-form-fields";
-import type { ActionError } from "@/lib/action-result";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,6 +14,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { ProjectFormFields } from "@/features/projects/project-form-fields";
+import type { ActionError } from "@/lib/action-result";
 
 export function CreateProjectButton() {
   const router = useRouter();
@@ -62,7 +62,7 @@ export function CreateProjectButton() {
         </Button>
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full max-w-md p-0">
+      <SheetContent side="right" className="w-full p-0 sm:max-w-md">
         <SheetHeader className="border-b px-5 py-4">
           <SheetTitle>Add Project</SheetTitle>
           <p className="text-sm text-muted-foreground">
