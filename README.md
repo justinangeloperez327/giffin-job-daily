@@ -211,6 +211,9 @@ Current unit coverage includes:
 - driver/foreman and driver/labour conflicts
 - timing validation
 - resource conflict mapping and lookup
+- foreman availability including draft labour conflicts
+- labour availability and draft-to-draft conflicts
+- labour reassignment input validation
 
 ## Local setup
 
