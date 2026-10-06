@@ -99,6 +99,37 @@ Database-enforced rules:
 
 Application validation additionally prevents cross-role conflicts so an employee cannot be assigned simultaneously as foreman, labour, or driver on different projects for the same date.
 
+## Application modules
+
+### Projects
+
+The Projects module provides:
+
+- searchable, sortable, paginated project listing
+- add and edit workflows
+- protected deletion when schedule history exists
+- project detail view
+- recent schedule history
+- schedule counts for operational visibility
+
+Changing a job number updates related schedule references through the configured database cascade.
+
+### Labours
+
+The Labours module provides:
+
+- search by employee ID, employee name, or designation
+- designation filtering
+- sortable, paginated employee listing
+- add and edit workflows
+- optional mobile number
+- protected deletion when the employee is referenced by a schedule
+- employee detail view
+- separate foreman, labour, and driver assignment history
+- assignment usage counts
+
+Changing an employee ID updates related schedule references through the configured database cascade.
+
 ## Shared data layer
 
 The server-side data layer is organized into:
@@ -140,6 +171,9 @@ npm test
 Current unit coverage includes:
 
 - schedule date and time parsing
+- project validation
+- labour validation
+- list-query normalization and sorting inputs
 - duplicate labour validation
 - foreman/labour role conflicts
 - driver/foreman and driver/labour conflicts
