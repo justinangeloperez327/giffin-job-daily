@@ -1,7 +1,6 @@
 import {
   CalendarDays,
   HardHat,
-  Truck,
   UserRoundCheck,
   UsersRound,
 } from "lucide-react";
