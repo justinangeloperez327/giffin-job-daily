@@ -18,28 +18,40 @@ model Project {
 }
 
 model Labour {
-  employeeId   String @id @map("employee_id")
-  employeeName String @map("employee_name")
+  employeeId   String  @id @map("employee_id")
+  employeeName String  @map("employee_name")
   designation  String
+  mobileNumber String? @map("mobile_number")
 
   foremanSchedules    DailySchedule[]       @relation("ScheduleForeman")
+  driverSchedules     DailySchedule[]       @relation("ScheduleDriver")
   scheduleAssignments DailyScheduleLabour[]
 
   @@map("labours")
 }
 
 model DailySchedule {
-  scheduleDate      DateTime @db.Date @map("schedule_date")
-  projectJobNo      String   @map("project_job_no")
-  foremanEmployeeId String   @map("foreman_employee_id")
+  scheduleDate      DateTime  @db.Date @map("schedule_date")
+  projectJobNo      String    @map("project_job_no")
+  foremanEmployeeId String    @map("foreman_employee_id")
+  campStartTime     DateTime? @db.Time(0) @map("camp_start_time")
+  startTime         DateTime? @db.Time(0) @map("start_time")
+  endTime           DateTime? @db.Time(0) @map("end_time")
+  dailyTarget       String?   @db.Text @map("daily_target")
+  driverEmployeeId  String?   @map("driver_employee_id")
+  equipmentVehicle  String?   @map("equipment_vehicle")
 
   project Project @relation(fields: [projectJobNo], references: [jobNo], onDelete: Restrict, onUpdate: Cascade)
   foreman Labour  @relation("ScheduleForeman", fields: [foremanEmployeeId], references: [employeeId], onDelete: Restrict, onUpdate: Cascade)
+  driver  Labour? @relation("ScheduleDriver", fields: [driverEmployeeId], references: [employeeId], onDelete: Restrict, onUpdate: Cascade)
   labours DailyScheduleLabour[]
 
   @@id([scheduleDate, projectJobNo])
+  @@unique([scheduleDate, foremanEmployeeId])
+  @@unique([scheduleDate, driverEmployeeId])
   @@index([projectJobNo])
   @@index([foremanEmployeeId])
+  @@index([driverEmployeeId])
   @@map("daily_schedules")
 }
 
@@ -52,6 +64,7 @@ model DailyScheduleLabour {
   labour        Labour        @relation(fields: [employeeId], references: [employeeId], onDelete: Restrict, onUpdate: Cascade)
 
   @@id([scheduleDate, projectJobNo, employeeId])
+  @@unique([scheduleDate, employeeId])
   @@index([employeeId])
   @@map("daily_schedules_labours")
 }
