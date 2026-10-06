@@ -73,7 +73,6 @@ export function buildDriverOptions({
 
       const databaseBlocker = resource.assignments.find((assignment) => {
         if (
-          selected &&
           assignment.projectJobNo === projectJobNo &&
           assignment.role === "DRIVER"
         ) {
