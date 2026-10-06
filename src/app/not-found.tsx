@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function NotFound() {
   return (
@@ -12,9 +13,12 @@ export default function NotFound() {
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
         The page you requested does not exist or has been moved.
       </p>
-      <Button className="mt-5" asChild>
-        <Link href="/">Return to dashboard</Link>
-      </Button>
+      <Link
+        href="/"
+        className={cn(buttonVariants(), "mt-5")}
+      >
+        Return to dashboard
+      </Link>
     </div>
   );
 }
