@@ -12,7 +12,6 @@ import {
 import { useRouter } from "next/navigation";
 import {
   type ChangeEvent,
-  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
@@ -312,16 +311,6 @@ export function DailyScheduleBoard({
     }
   }
 
-  function selectRowFromKeyboard(
-    event: KeyboardEvent<HTMLDivElement>,
-    rowKey: string,
-  ) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      setSelectedRowKey(rowKey);
-    }
-  }
-
   function removeSavedSchedule(projectJobNo: string, projectName: string) {
     if (
       !window.confirm(
@@ -494,34 +483,41 @@ export function DailyScheduleBoard({
                     return (
                       <div
                         key={row.projectJobNo}
-                        role="button"
-                        tabIndex={0}
-                        aria-pressed={selected}
                         onClick={() => setSelectedRowKey(rowKey)}
-                        onKeyDown={(event) =>
-                          selectRowFromKeyboard(event, rowKey)
-                        }
                         className={cn(
-                          "grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                          "grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] transition-colors",
                           selected && "bg-accent/35",
                         )}
                       >
                         <div className="relative px-3 py-3 pr-10">
-                          <p className="text-sm font-medium">{row.projectName}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Job {row.projectJobNo} · SO {row.soNo}
-                          </p>
+                          <button
+                            type="button"
+                            className="block w-full rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-pressed={selected}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedRowKey(rowKey);
+                            }}
+                          >
+                            <span className="block text-sm font-medium">
+                              {row.projectName}
+                            </span>
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              Job {row.projectJobNo} · SO {row.soNo}
+                            </span>
+                          </button>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
                             disabled={pending}
-                            onClick={() =>
+                            onClick={(event) => {
+                              event.stopPropagation();
                               removeSavedSchedule(
                                 row.projectJobNo,
                                 row.projectName,
-                              )
-                            }
+                              );
+                            }}
                             aria-label={`Remove ${row.projectName} from schedule`}
                           >
                             <Trash2 className="size-4" />
@@ -571,30 +567,37 @@ export function DailyScheduleBoard({
                     return (
                       <div
                         key={row.id}
-                        role="button"
-                        tabIndex={0}
-                        aria-pressed={selected}
                         onClick={() => setSelectedRowKey(row.id)}
-                        onKeyDown={(event) =>
-                          selectRowFromKeyboard(event, row.id)
-                        }
                         className={cn(
-                          "grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] bg-muted/10 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                          "grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] bg-muted/10 transition-colors",
                           selected && "bg-accent/35",
                         )}
                       >
                         <div className="relative px-3 py-3 pr-10">
-                          <div className="rounded-md border border-dashed px-3 py-2">
-                            <p className="text-sm font-medium">Select project</p>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                          <button
+                            type="button"
+                            className="block w-full rounded-md border border-dashed px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-pressed={selected}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedRowKey(row.id);
+                            }}
+                          >
+                            <span className="block text-sm font-medium">
+                              Select project
+                            </span>
+                            <span className="mt-1 block text-xs text-muted-foreground">
                               Project selection is required before saving.
-                            </p>
-                          </div>
+                            </span>
+                          </button>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => removeDraftRow(row.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              removeDraftRow(row.id);
+                            }}
                             aria-label="Remove draft schedule row"
                           >
                             <Trash2 className="size-4" />
