@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Project {
+  projectName String @map("project_name")
+  jobNo       String @id @map("job_no")
+  soNo        String? @map("so_no")
+
+  dailySchedules DailySchedule[]
+
+  @@map("projects")
+}
+
+model Labour {
+  employeeId   String @id @map("employee_id")
+  employeeName String @map("employee_name")
+  designation  String
+
+  foremanSchedules    DailySchedule[]       @relation("ScheduleForeman")
+  scheduleAssignments DailyScheduleLabour[]
+
+  @@map("labours")
+}
+
+model DailySchedule {
+  scheduleDate      DateTime @db.Date @map("schedule_date")
+  projectJobNo      String   @map("project_job_no")
+  foremanEmployeeId String   @map("foreman_employee_id")
+
+  project Project @relation(fields: [projectJobNo], references: [jobNo], onDelete: Restrict, onUpdate: Cascade)
+  foreman Labour  @relation("ScheduleForeman", fields: [foremanEmployeeId], references: [employeeId], onDelete: Restrict, onUpdate: Cascade)
+  labours DailyScheduleLabour[]
+
+  @@id([scheduleDate, projectJobNo])
+  @@index([projectJobNo])
+  @@index([foremanEmployeeId])
+  @@map("daily_schedules")
+}
+
+model DailyScheduleLabour {
+  scheduleDate DateTime @db.Date @map("daily_schedules_schedule_date")
+  projectJobNo String   @map("daily_schedules_project_job_no")
+  employeeId   String   @map("labour_employee_id")
+
+  dailySchedule DailySchedule @relation(fields: [scheduleDate, projectJobNo], references: [scheduleDate, projectJobNo], onDelete: Cascade, onUpdate: Cascade)
+  labour        Labour        @relation(fields: [employeeId], references: [employeeId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([scheduleDate, projectJobNo, employeeId])
+  @@index([employeeId])
+  @@map("daily_schedules_labours")
+}
