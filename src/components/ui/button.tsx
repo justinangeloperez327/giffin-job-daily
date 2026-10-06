@@ -36,37 +36,22 @@ const buttonVariants = cva(
 );
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  };
+  VariantProps<typeof buttonVariants>;
 
 function Button({
   className,
   variant,
   size,
-  asChild = false,
-  children,
+  type = "button",
   ...props
 }: ButtonProps) {
-  if (asChild && React.isValidElement(children)) {
-    const child = children as React.ReactElement<{
-      className?: string;
-    }>;
-
-    return React.cloneElement(child, {
-      ...props,
-      className: cn(buttonVariants({ variant, size, className }), child.props.className),
-    });
-  }
-
   return (
     <button
+      type={type}
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    >
-      {children}
-    </button>
+    />
   );
 }
 
