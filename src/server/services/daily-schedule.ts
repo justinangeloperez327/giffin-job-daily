@@ -12,6 +12,7 @@ import {
 } from "@/lib/date-time";
 import {
   dailyScheduleInputSchema,
+  dailyScheduleKeySchema,
   type DailyScheduleInput,
 } from "@/lib/validation/schedule";
 import { ApplicationError, mapDatabaseError } from "@/server/database/errors";
@@ -274,24 +275,30 @@ export async function deleteDailySchedule(
   scheduleDate: string,
   projectJobNo: string,
 ): Promise<ActionResult<{ scheduleDate: string; projectJobNo: string }>> {
+  const parsed = dailyScheduleKeySchema.safeParse({
+    scheduleDate,
+    projectJobNo,
+  });
+
+  if (!parsed.success) {
+    return validationFailure(parsed.error);
+  }
+
   try {
-    const date = parseScheduleDate(scheduleDate);
+    const date = parseScheduleDate(parsed.data.scheduleDate);
 
     await withSerializableTransaction(async (transaction) => {
       await transaction.dailySchedule.delete({
         where: {
           scheduleDate_projectJobNo: {
             scheduleDate: date,
-            projectJobNo,
+            projectJobNo: parsed.data.projectJobNo,
           },
         },
       });
     });
 
-    return actionSuccess({
-      scheduleDate,
-      projectJobNo,
-    });
+    return actionSuccess(parsed.data);
   } catch (error) {
     return actionFailure(mapDatabaseError(error));
   }
