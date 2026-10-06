@@ -257,6 +257,75 @@ npm run check
 
 The health endpoint returns `200` with `{"status":"ok"}` when PostgreSQL is reachable and `503` with `{"status":"unavailable"}` when database readiness fails. It does not expose database error details.
 
+## Deploying to Vercel
+
+The repository is configured for Vercel + Prisma Postgres.
+
+### Vercel project setup
+
+1. Import this GitHub repository into Vercel.
+2. Add **Prisma Postgres** from the Vercel Marketplace and connect it to the project.
+3. Confirm that Vercel created the `DATABASE_URL` environment variable.
+4. Add:
+
+   ```text
+   APP_TIME_ZONE=Asia/Dubai
+   ```
+
+5. Deploy the `main` branch.
+
+The repository pins Node.js to `22.x` so Vercel uses the same major runtime as CI rather than its newer default Node.js runtime.
+
+### Prisma generation and migrations
+
+`postinstall` runs:
+
+```bash
+prisma generate
+```
+
+on every Vercel dependency installation.
+
+Vercel uses the repository's `vercel.json`, which runs:
+
+```bash
+npm run vercel-build
+```
+
+The Vercel build script behaves differently by environment:
+
+- **Production:** runs `prisma migrate deploy`, regenerates Prisma Client, then runs `next build`.
+- **Preview:** skips database migrations by default, regenerates Prisma Client, then runs `next build`.
+- **Local/non-Vercel:** skips production migrations.
+
+This prevents an ordinary preview deployment from applying schema changes to a production database.
+
+If you later configure a dedicated Preview database, set:
+
+```text
+VERCEL_MIGRATE_PREVIEW=1
+```
+
+for the Preview environment only. Preview deployments will then apply pending migrations to that Preview database.
+
+Do not set `VERCEL_MIGRATE_PREVIEW=1` while Preview and Production share the same database.
+
+### Deployment verification
+
+After deployment, verify:
+
+```text
+/api/health
+```
+
+A healthy deployment returns HTTP `200` with:
+
+```json
+{"status":"ok"}
+```
+
+Prisma Postgres connected through the Vercel Marketplace supplies a pooled `DATABASE_URL`, so no separate connection-pool service is required.
+
 ## Local setup
 
 1. Copy `.env.example` to `.env`.
