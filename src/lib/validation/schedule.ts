@@ -8,6 +8,11 @@ import {
   scheduleDateSchema,
 } from "@/lib/validation/common";
 
+export const dailyScheduleKeySchema = z.object({
+  scheduleDate: scheduleDateSchema,
+  projectJobNo: requiredText("Project", 50),
+});
+
 export const dailyScheduleInputSchema = z
   .object({
     scheduleDate: scheduleDateSchema,
@@ -91,4 +96,5 @@ export const dailyScheduleInputSchema = z
     }
   });
 
+export type DailyScheduleKey = z.infer<typeof dailyScheduleKeySchema>;
 export type DailyScheduleInput = z.infer<typeof dailyScheduleInputSchema>;
