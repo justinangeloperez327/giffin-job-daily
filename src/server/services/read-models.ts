@@ -4,6 +4,7 @@ import {
   type ActionResult,
   validationFailure,
 } from "@/lib/action-result";
+import { projectKeySchema } from "@/lib/validation/project";
 import {
   labourListQuerySchema,
   projectListQuerySchema,
@@ -14,6 +15,7 @@ import { mapDatabaseError } from "@/server/database/errors";
 import {
   countLabours,
   countProjects,
+  getProjectDetailByJobNo,
   listLabourDesignations,
   listLabours,
   listProjects,
@@ -29,25 +31,33 @@ export type PaginatedResult<T> = {
   pageCount: number;
 };
 
+export type ProjectsPageResult = PaginatedResult<
+  Awaited<ReturnType<typeof listProjects>>[number]
+> & {
+  search?: string;
+  sort: "projectName" | "jobNo" | "soNo";
+  order: "asc" | "desc";
+};
+
 function pageCount(total: number, pageSize: number) {
   return total === 0 ? 0 : Math.ceil(total / pageSize);
 }
 
 export async function loadProjectsPage(
   input: unknown = {},
-): Promise<ActionResult<PaginatedResult<Awaited<ReturnType<typeof listProjects>>[number]>>> {
+): Promise<ActionResult<ProjectsPageResult>> {
   const parsed = projectListQuerySchema.safeParse(input);
 
   if (!parsed.success) {
     return validationFailure(parsed.error);
   }
 
-  const { search, page, pageSize } = parsed.data;
+  const { search, page, pageSize, sort, order } = parsed.data;
   const skip = (page - 1) * pageSize;
 
   try {
     const [items, total] = await Promise.all([
-      listProjects({ search, skip, take: pageSize }),
+      listProjects({ search, skip, take: pageSize, sort, order }),
       countProjects(search),
     ]);
 
@@ -57,7 +67,33 @@ export async function loadProjectsPage(
       page,
       pageSize,
       pageCount: pageCount(total, pageSize),
+      search,
+      sort,
+      order,
     });
+  } catch (error) {
+    return actionFailure(mapDatabaseError(error));
+  }
+}
+
+export async function loadProjectDetail(input: unknown) {
+  const parsed = projectKeySchema.safeParse(input);
+
+  if (!parsed.success) {
+    return validationFailure(parsed.error);
+  }
+
+  try {
+    const project = await getProjectDetailByJobNo(parsed.data.jobNo);
+
+    if (!project) {
+      return actionFailure({
+        code: "NOT_FOUND",
+        message: "The requested project could not be found.",
+      });
+    }
+
+    return actionSuccess(project);
   } catch (error) {
     return actionFailure(mapDatabaseError(error));
   }

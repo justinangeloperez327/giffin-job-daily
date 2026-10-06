@@ -5,16 +5,23 @@ export {
 export {
   labourListQuerySchema,
   projectListQuerySchema,
+  projectSortFieldSchema,
   resourceAvailabilityQuerySchema,
   scheduleDayQuerySchema,
+  sortOrderSchema,
   type LabourListQuery,
   type ProjectListQuery,
+  type ProjectSortField,
   type ResourceAvailabilityQuery,
   type ScheduleDayQuery,
+  type SortOrder,
 } from "@/lib/validation/query";
 export {
   projectInputSchema,
+  projectJobNoSchema,
+  projectKeySchema,
   type ProjectInput,
+  type ProjectKey,
 } from "@/lib/validation/project";
 export {
   dailyScheduleInputSchema,

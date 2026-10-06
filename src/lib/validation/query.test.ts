@@ -7,11 +7,13 @@ import {
 } from "@/lib/validation/query";
 
 describe("list query validation", () => {
-  it("applies pagination defaults", () => {
+  it("applies project list defaults", () => {
     const result = projectListQuerySchema.parse({});
 
     expect(result.page).toBe(1);
     expect(result.pageSize).toBe(25);
+    expect(result.sort).toBe("projectName");
+    expect(result.order).toBe("asc");
   });
 
   it("coerces URL-style pagination values", () => {
@@ -27,6 +29,12 @@ describe("list query validation", () => {
   it("rejects oversized page sizes", () => {
     expect(
       projectListQuerySchema.safeParse({ pageSize: 101 }).success,
+    ).toBe(false);
+  });
+
+  it("rejects unsupported project sort fields", () => {
+    expect(
+      projectListQuerySchema.safeParse({ sort: "createdAt" }).success,
     ).toBe(false);
   });
 

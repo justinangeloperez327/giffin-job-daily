@@ -8,6 +8,7 @@ export {
 export {
   countProjects,
   getProjectByJobNo,
+  getProjectDetailByJobNo,
   listProjects,
   type ProjectListOptions,
 } from "@/server/repositories/projects";

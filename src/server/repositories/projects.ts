@@ -1,10 +1,16 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import type {
+  ProjectSortField,
+  SortOrder,
+} from "@/lib/validation/query";
 
 export type ProjectListOptions = {
   search?: string;
   skip?: number;
   take?: number;
+  sort?: ProjectSortField;
+  order?: SortOrder;
 };
 
 function buildProjectWhere(search?: string): Prisma.ProjectWhereInput | undefined {
@@ -38,14 +44,37 @@ function buildProjectWhere(search?: string): Prisma.ProjectWhereInput | undefine
   };
 }
 
+function buildProjectOrderBy(
+  sort: ProjectSortField = "projectName",
+  order: SortOrder = "asc",
+): Prisma.ProjectOrderByWithRelationInput[] {
+  const primary = {
+    [sort]: order,
+  } as Prisma.ProjectOrderByWithRelationInput;
+
+  return sort === "jobNo" ? [primary] : [primary, { jobNo: "asc" }];
+}
+
 export async function listProjects({
   search,
   skip = 0,
   take = 100,
+  sort = "projectName",
+  order = "asc",
 }: ProjectListOptions = {}) {
   return prisma.project.findMany({
     where: buildProjectWhere(search),
-    orderBy: [{ projectName: "asc" }, { jobNo: "asc" }],
+    select: {
+      projectName: true,
+      jobNo: true,
+      soNo: true,
+      _count: {
+        select: {
+          dailySchedules: true,
+        },
+      },
+    },
+    orderBy: buildProjectOrderBy(sort, order),
     skip: Math.max(0, skip),
     take: Math.min(Math.max(1, take), 500),
   });
@@ -60,5 +89,33 @@ export async function countProjects(search?: string) {
 export async function getProjectByJobNo(jobNo: string) {
   return prisma.project.findUnique({
     where: { jobNo },
+  });
+}
+
+export async function getProjectDetailByJobNo(jobNo: string) {
+  return prisma.project.findUnique({
+    where: { jobNo },
+    include: {
+      _count: {
+        select: {
+          dailySchedules: true,
+        },
+      },
+      dailySchedules: {
+        take: 100,
+        orderBy: {
+          scheduleDate: "desc",
+        },
+        include: {
+          foreman: true,
+          driver: true,
+          _count: {
+            select: {
+              labours: true,
+            },
+          },
+        },
+      },
+    },
   });
 }
