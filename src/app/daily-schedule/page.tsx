@@ -1,19 +1,99 @@
-import { CalendarDays } from "lucide-react";
-
 import { PageHeader } from "@/components/layout/page-header";
-import { EmptyState } from "@/components/states/empty-state";
+import {
+  DailyScheduleBoard,
+  type ResourcePoolSummary,
+  type ScheduleBoardRow,
+} from "@/features/daily-schedule/daily-schedule-board";
+import {
+  formatTimeValue,
+  getScheduleDateInTimeZone,
+} from "@/lib/date-time";
+import { scheduleDateSchema } from "@/lib/validation/common";
+import {
+  loadResourcePool,
+  loadScheduleDay,
+} from "@/server/services/read-models";
 
-export default function DailySchedulePage() {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function firstQueryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function DailySchedulePage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const timeZone = process.env.APP_TIME_ZONE ?? "Asia/Dubai";
+  const today = getScheduleDateInTimeZone(new Date(), timeZone);
+  const rawSearchParams = await searchParams;
+  const requestedDate = firstQueryValue(rawSearchParams.date);
+  const parsedDate = scheduleDateSchema.safeParse(requestedDate);
+  const selectedDate = parsedDate.success ? parsedDate.data : today;
+
+  const [scheduleResult, resourceResult] = await Promise.all([
+    loadScheduleDay({ scheduleDate: selectedDate }),
+    loadResourcePool({ scheduleDate: selectedDate }),
+  ]);
+
+  if (!scheduleResult.ok) {
+    return (
+      <div className="space-y-5">
+        <PageHeader
+          title="Daily Schedule"
+          description="Plan daily project resources, timing, targets, and logistics."
+        />
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {scheduleResult.error.message}
+        </div>
+      </div>
+    );
+  }
+
+  const schedules: ScheduleBoardRow[] = scheduleResult.data.map((schedule) => ({
+    projectJobNo: schedule.projectJobNo,
+    projectName: schedule.project.projectName,
+    soNo: schedule.project.soNo,
+    foremanEmployeeId: schedule.foreman.employeeId,
+    foremanName: schedule.foreman.employeeName,
+    labourCount: schedule.labours.length,
+    labourNames: schedule.labours
+      .slice(0, 4)
+      .map((assignment) => assignment.labour.employeeName),
+    campStartTime: formatTimeValue(schedule.campStartTime),
+    startTime: formatTimeValue(schedule.startTime),
+    endTime: formatTimeValue(schedule.endTime),
+    dailyTarget: schedule.dailyTarget,
+  }));
+
+  const resourceSummary: ResourcePoolSummary = resourceResult.ok
+    ? {
+        total: resourceResult.data.length,
+        available: resourceResult.data.filter((resource) => resource.available)
+          .length,
+        assigned: resourceResult.data.filter((resource) => !resource.available)
+          .length,
+      }
+    : {
+        total: 0,
+        available: 0,
+        assigned: 0,
+      };
+
   return (
     <div className="space-y-5">
       <PageHeader
         title="Daily Schedule"
         description="Plan daily project resources, timing, targets, and logistics."
       />
-      <EmptyState
-        icon={CalendarDays}
-        title="Daily scheduling is ready for implementation"
-        description="The scheduling board will be implemented in the Daily Schedule groups."
+
+      <DailyScheduleBoard
+        selectedDate={selectedDate}
+        today={today}
+        initialSchedules={schedules}
+        resourceSummary={resourceSummary}
+        resourceError={resourceResult.ok ? undefined : resourceResult.error.message}
       />
     </div>
   );

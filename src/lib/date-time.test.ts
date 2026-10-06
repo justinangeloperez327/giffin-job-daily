@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   formatScheduleDate,
   formatTimeValue,
+  getScheduleDateInTimeZone,
   isScheduleDate,
   isTimeValue,
   parseScheduleDate,
   parseTimeValue,
+  shiftScheduleDate,
   timeValueToMinutes,
 } from "@/lib/date-time";
 
@@ -21,6 +23,18 @@ describe("schedule date helpers", () => {
     expect(formatScheduleDate(parseScheduleDate("2026-10-06"))).toBe(
       "2026-10-06",
     );
+  });
+
+  it("shifts dates across month boundaries", () => {
+    expect(shiftScheduleDate("2026-10-31", 1)).toBe("2026-11-01");
+    expect(shiftScheduleDate("2026-10-01", -1)).toBe("2026-09-30");
+  });
+
+  it("derives the business date from a timezone", () => {
+    const value = new Date("2026-10-06T21:30:00.000Z");
+
+    expect(getScheduleDateInTimeZone(value, "Asia/Dubai")).toBe("2026-10-07");
+    expect(getScheduleDateInTimeZone(value, "UTC")).toBe("2026-10-06");
   });
 });
 
