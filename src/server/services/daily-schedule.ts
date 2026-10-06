@@ -17,6 +17,10 @@ import {
 } from "@/lib/validation/schedule";
 import { ApplicationError, mapDatabaseError } from "@/server/database/errors";
 import { withSerializableTransaction } from "@/server/database/transaction";
+import {
+  buildResourceConflictMap,
+  findFirstResourceConflict,
+} from "@/server/services/resource-conflicts";
 
 type ScheduleEmployee = {
   employeeId: string;
@@ -151,37 +155,16 @@ export async function saveDailySchedule(
         );
       }
 
-      const conflicts = new Map<string, string>();
-
-      for (const schedule of otherSchedules) {
-        conflicts.set(
-          schedule.foremanEmployeeId,
-          `already assigned as foreman to ${schedule.projectJobNo}`,
-        );
-
-        if (schedule.driverEmployeeId) {
-          conflicts.set(
-            schedule.driverEmployeeId,
-            `already assigned as driver to ${schedule.projectJobNo}`,
-          );
-        }
-
-        for (const assignment of schedule.labours) {
-          conflicts.set(
-            assignment.employeeId,
-            `already assigned as labour to ${schedule.projectJobNo}`,
-          );
-        }
-      }
-
-      const requestedConflict = requestedEmployeeIds.find((employeeId) =>
-        conflicts.has(employeeId),
+      const conflicts = buildResourceConflictMap(otherSchedules);
+      const requestedConflict = findFirstResourceConflict(
+        requestedEmployeeIds,
+        conflicts,
       );
 
       if (requestedConflict) {
         throw new ApplicationError(
           "CONFLICT",
-          `Employee ${requestedConflict} is ${conflicts.get(requestedConflict)}.`,
+          `Employee ${requestedConflict.employeeId} is ${requestedConflict.message}.`,
         );
       }
 
