@@ -16,6 +16,10 @@ function projectInputFromForm(formData: FormData) {
   };
 }
 
+function projectDetailPath(jobNo: string) {
+  return `/projects/${encodeURIComponent(jobNo)}`;
+}
+
 export async function createProjectAction(formData: FormData) {
   const result = await createProject(projectInputFromForm(formData));
 
@@ -37,8 +41,8 @@ export async function updateProjectAction(
 
   if (result.ok) {
     revalidatePath("/projects");
-    revalidatePath(`/projects/${originalJobNo}`);
-    revalidatePath(`/projects/${result.data.jobNo}`);
+    revalidatePath(projectDetailPath(originalJobNo));
+    revalidatePath(projectDetailPath(result.data.jobNo));
   }
 
   return result;
@@ -49,6 +53,7 @@ export async function deleteProjectAction(jobNo: string) {
 
   if (result.ok) {
     revalidatePath("/projects");
+    revalidatePath(projectDetailPath(jobNo));
   }
 
   return result;
