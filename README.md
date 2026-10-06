@@ -11,6 +11,7 @@ Daily project and labour scheduling application built with Next.js, TypeScript, 
 - Tailwind CSS 4.3.3
 - Prisma ORM 7.10.0
 - PostgreSQL 18
+- Zod 4.6.5
 
 ## Database
 
@@ -51,7 +52,7 @@ This permits several projects on the same day while allowing only one schedule p
 
 The database also prevents the same foreman from being assigned to more than one project on the same date.
 
-Timing fields, daily target, driver, and equipment/vehicle are nullable at the database layer so schedules can be built incrementally and existing installations can apply the migration safely. Application validation will enforce completeness where the workflow requires it.
+Timing fields, daily target, driver, and equipment/vehicle are nullable at the database layer so schedules can be built incrementally and existing installations can apply the migration safely. Application validation enforces workflow rules before writes.
 
 Timing constraints enforce:
 
@@ -82,8 +83,6 @@ schedule_date + employee_id
 
 prevents the same labour employee from being allocated to two projects on the same date.
 
-The schedule-to-labour table includes the project job number because a single date can contain schedules for multiple projects.
-
 ### Scheduling rules
 
 Database-enforced rules:
@@ -92,12 +91,40 @@ Database-enforced rules:
 - One foreman assignment per employee per date.
 - One labour assignment per employee per date.
 - Project, foreman, driver, and labour references must point to existing records.
-- A project or employee referenced by a schedule cannot be deleted accidentally.
+- Referenced projects and employees cannot be deleted accidentally.
 - Deleting a schedule removes its labour assignment rows.
 - Camp start cannot be later than work start when both are provided.
 - Work start must be earlier than work end when both are provided.
 
-Application-level validation will additionally handle cross-role conflicts, including driver availability and preventing one employee from being assigned simultaneously as foreman, labour, or driver where the workflow disallows it.
+Application validation additionally prevents cross-role conflicts so an employee cannot be assigned simultaneously as foreman, labour, or driver on different projects for the same date.
+
+## Shared data layer
+
+The server-side data layer is organized into:
+
+```text
+src/server/database
+src/server/repositories
+src/server/services
+src/lib/validation
+```
+
+Repositories provide reusable read queries for projects, labours, schedules, and schedule labour assignments.
+
+The availability service calculates each employee's assignments for a selected date and returns whether the employee is currently available.
+
+Schedule writes use a serializable Prisma transaction. A save:
+
+1. Validates the complete payload with Zod.
+2. Confirms the project and employees exist.
+3. Checks same-day foreman, labour, and driver conflicts.
+4. Upserts the schedule.
+5. Replaces its labour assignments atomically.
+6. Reloads and returns the complete saved schedule.
+
+Serialization conflicts are retried up to three times with a short backoff. Prisma/database failures are mapped to a consistent application error structure.
+
+The Prisma entry point is marked `server-only` so database code cannot accidentally be imported into Client Components.
 
 ## Local setup
 
