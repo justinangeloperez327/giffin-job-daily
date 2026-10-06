@@ -154,7 +154,11 @@ The Daily Schedule workspace provides:
 - loading skeleton
 - daily project/labour/foreman summary
 
-Project selection is implemented with the shadcn Popover + Command combobox pattern. A draft schedule remains unsaved until Group 8 supplies the required foreman.
+Project and foreman selection use the shadcn Popover + Command combobox pattern.
+
+Foreman assignment now supports both the schedule-row selector and the right-side Foremen pool. The pool separates available and assigned foremen, exposes existing assignment context, prevents same-day and cross-role conflicts, and lets the planner jump to the blocking schedule row. Existing saved schedules require confirmation before foreman reassignment and preserve their labour, timing, target, driver, and equipment data.
+
+A new schedule can be persisted once every draft row has both a project and foreman. Labour assignment remains optional and is added through Group 9.
 
 ## Shared data layer
 
