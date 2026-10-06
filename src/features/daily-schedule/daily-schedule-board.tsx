@@ -32,10 +32,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  ForemanSelector,
-  type ForemanOption,
-} from "@/features/daily-schedule/foreman-selector";
+import { ForemanSelector } from "@/features/daily-schedule/foreman-selector";
+import { buildForemanOptions } from "@/features/daily-schedule/foreman-options";
 import {
   ProjectSelector,
   type ScheduleProjectOption,
@@ -100,18 +98,6 @@ function displayDate(value: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00.000Z`));
-}
-
-function roleLabel(role: "FOREMAN" | "LABOUR" | "DRIVER") {
-  if (role === "FOREMAN") {
-    return "Foreman";
-  }
-
-  if (role === "DRIVER") {
-    return "Driver";
-  }
-
-  return "Labour";
 }
 
 function TimingCell({ row }: { row: ScheduleBoardRow }) {
@@ -342,67 +328,20 @@ export function DailyScheduleBoard({
     rowKey: string,
     projectJobNo: string | null,
     selectedForemanId: string | null,
-  ): ForemanOption[] {
-    const draftAssignments = draftRows
-      .filter(
-        (row) =>
-          row.id !== rowKey &&
-          row.foremanEmployeeId !== null,
-      )
-      .map((row) => ({
-        employeeId: row.foremanEmployeeId as string,
+  ) {
+    return buildForemanOptions({
+      resources,
+      drafts: draftRows.map((row) => ({
         rowKey: row.id,
         projectJobNo: row.projectJobNo,
-      }));
-
-    return resources
-      .filter(
-        (resource) =>
-          resource.designation.toLowerCase().includes("foreman") ||
-          resource.employeeId === selectedForemanId,
-      )
-      .map((resource) => {
-        const selected = resource.employeeId === selectedForemanId;
-        const databaseBlocker = resource.assignments.find(
-          (assignment) =>
-            assignment.projectJobNo !== projectJobNo ||
-            assignment.role !== "FOREMAN",
-        );
-        const draftBlocker = draftAssignments.find(
-          (assignment) => assignment.employeeId === resource.employeeId,
-        );
-
-        const available =
-          selected || (!databaseBlocker && !draftBlocker && Boolean(projectJobNo));
-
-        let statusLabel: string | undefined;
-        let assignmentRowKey: string | undefined;
-
-        if (selected) {
-          statusLabel = "Selected";
-        } else if (draftBlocker) {
-          const project = projects.find(
-            (item) => item.jobNo === draftBlocker.projectJobNo,
-          );
-          statusLabel = `Assigned → ${project?.jobNo ?? "Draft"}`;
-          assignmentRowKey = draftBlocker.rowKey;
-        } else if (databaseBlocker) {
-          statusLabel = `${roleLabel(databaseBlocker.role)} → ${databaseBlocker.projectJobNo}`;
-          assignmentRowKey = savedRowKey(databaseBlocker.projectJobNo);
-        } else if (projectJobNo) {
-          statusLabel = "Available";
-        }
-
-        return {
-          employeeId: resource.employeeId,
-          employeeName: resource.employeeName,
-          designation: resource.designation,
-          available,
-          selected,
-          statusLabel,
-          assignmentRowKey,
-        };
-      });
+        foremanEmployeeId: row.foremanEmployeeId,
+      })),
+      projects,
+      currentRowKey: rowKey,
+      projectJobNo,
+      selectedForemanId,
+      savedRowKey,
+    });
   }
 
   function assignForeman(rowKey: string, employeeId: string) {
