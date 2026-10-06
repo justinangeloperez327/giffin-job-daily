@@ -27,6 +27,7 @@ model Labour {
   driverSchedules     DailySchedule[]       @relation("ScheduleDriver")
   scheduleAssignments DailyScheduleLabour[]
 
+  @@index([designation])
   @@map("labours")
 }
 
