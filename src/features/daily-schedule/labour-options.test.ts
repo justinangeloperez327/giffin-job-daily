@@ -46,6 +46,29 @@ describe("labour availability", () => {
     expect(foreman?.statusLabel).toBe("Foreman on this project");
   });
 
+  it("blocks a driver selected by another draft row", () => {
+    const result = buildLabourOptions({
+      resources,
+      drafts: [{
+        rowKey: "draft-2",
+        projectJobNo: "JOB-2",
+        foremanEmployeeId: null,
+        labourEmployeeIds: [],
+        driverEmployeeId: "L-1",
+      }],
+      currentRowKey: "draft-1",
+      projectJobNo: "JOB-1",
+      selectedLabourIds: [],
+      currentForemanId: null,
+      currentDriverId: null,
+      savedRowKey: (jobNo) => `saved:${jobNo}`,
+    });
+
+    const blocked = result.find((item) => item.employeeId === "L-1");
+    expect(blocked?.available).toBe(false);
+    expect(blocked?.statusLabel).toBe("Driver → JOB-2");
+  });
+
   it("blocks employees selected by another draft row", () => {
     const result = buildLabourOptions({
       resources,
