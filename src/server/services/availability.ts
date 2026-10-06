@@ -15,12 +15,15 @@ export type ResourceAvailability = {
   designation: string;
   mobileNumber: string | null;
   available: boolean;
+  assignedToCurrentSchedule: boolean;
   assignments: ResourceAssignment[];
+  blockingAssignments: ResourceAssignment[];
 };
 
 export type AvailabilityOptions = {
   search?: string;
   designation?: string;
+  currentProjectJobNo?: string;
   take?: number;
 };
 
@@ -29,12 +32,14 @@ export async function getResourceAvailability(
   {
     search,
     designation,
+    currentProjectJobNo,
     take = 1000,
   }: AvailabilityOptions = {},
 ): Promise<ResourceAvailability[]> {
   const date = parseScheduleDate(scheduleDate);
   const normalizedSearch = search?.trim();
   const normalizedDesignation = designation?.trim();
+  const normalizedCurrentProject = currentProjectJobNo?.trim();
 
   const employees = await prisma.labour.findMany({
     where: {
@@ -128,13 +133,25 @@ export async function getResourceAvailability(
       })),
     ];
 
+    const blockingAssignments = normalizedCurrentProject
+      ? assignments.filter(
+          (assignment) => assignment.projectJobNo !== normalizedCurrentProject,
+        )
+      : assignments;
+
     return {
       employeeId: employee.employeeId,
       employeeName: employee.employeeName,
       designation: employee.designation,
       mobileNumber: employee.mobileNumber,
-      available: assignments.length === 0,
+      available: blockingAssignments.length === 0,
+      assignedToCurrentSchedule:
+        Boolean(normalizedCurrentProject) &&
+        assignments.some(
+          (assignment) => assignment.projectJobNo === normalizedCurrentProject,
+        ),
       assignments,
+      blockingAssignments,
     };
   });
 }
