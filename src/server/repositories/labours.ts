@@ -1,3 +1,4 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export type LabourListOptions = {
@@ -7,48 +8,64 @@ export type LabourListOptions = {
   take?: number;
 };
 
+function buildLabourWhere({
+  search,
+  designation,
+}: Pick<LabourListOptions, "search" | "designation">): Prisma.LabourWhereInput {
+  const normalizedSearch = search?.trim();
+  const normalizedDesignation = designation?.trim();
+
+  return {
+    ...(normalizedDesignation
+      ? { designation: { equals: normalizedDesignation, mode: "insensitive" } }
+      : {}),
+    ...(normalizedSearch
+      ? {
+          OR: [
+            {
+              employeeId: {
+                contains: normalizedSearch,
+                mode: "insensitive",
+              },
+            },
+            {
+              employeeName: {
+                contains: normalizedSearch,
+                mode: "insensitive",
+              },
+            },
+            {
+              designation: {
+                contains: normalizedSearch,
+                mode: "insensitive",
+              },
+            },
+          ],
+        }
+      : {}),
+  };
+}
+
 export async function listLabours({
   search,
   designation,
   skip = 0,
   take = 100,
 }: LabourListOptions = {}) {
-  const normalizedSearch = search?.trim();
-  const normalizedDesignation = designation?.trim();
-
   return prisma.labour.findMany({
-    where: {
-      ...(normalizedDesignation
-        ? { designation: { equals: normalizedDesignation, mode: "insensitive" } }
-        : {}),
-      ...(normalizedSearch
-        ? {
-            OR: [
-              {
-                employeeId: {
-                  contains: normalizedSearch,
-                  mode: "insensitive",
-                },
-              },
-              {
-                employeeName: {
-                  contains: normalizedSearch,
-                  mode: "insensitive",
-                },
-              },
-              {
-                designation: {
-                  contains: normalizedSearch,
-                  mode: "insensitive",
-                },
-              },
-            ],
-          }
-        : {}),
-    },
+    where: buildLabourWhere({ search, designation }),
     orderBy: [{ employeeName: "asc" }, { employeeId: "asc" }],
     skip: Math.max(0, skip),
     take: Math.min(Math.max(1, take), 1000),
+  });
+}
+
+export async function countLabours({
+  search,
+  designation,
+}: Pick<LabourListOptions, "search" | "designation"> = {}) {
+  return prisma.labour.count({
+    where: buildLabourWhere({ search, designation }),
   });
 }
 

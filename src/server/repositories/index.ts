@@ -1,10 +1,12 @@
 export {
+  countLabours,
   getLabourByEmployeeId,
   listLabourDesignations,
   listLabours,
   type LabourListOptions,
 } from "@/server/repositories/labours";
 export {
+  countProjects,
   getProjectByJobNo,
   listProjects,
   type ProjectListOptions,
