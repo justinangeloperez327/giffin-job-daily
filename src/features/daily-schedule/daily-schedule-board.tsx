@@ -36,6 +36,16 @@ import {
 } from "@/components/ui/sheet";
 import { ForemanSelector } from "@/features/daily-schedule/foreman-selector";
 import { buildForemanOptions } from "@/features/daily-schedule/foreman-options";
+import {
+  DailyTargetEditor,
+  TimingEditor,
+} from "@/features/daily-schedule/schedule-field-editors";
+import {
+  hasTimingErrors,
+  scheduleEditableFieldsFrom,
+  type ScheduleEditableFields,
+  validateTimingFields,
+} from "@/features/daily-schedule/schedule-fields";
 import { buildLabourOptions } from "@/features/daily-schedule/labour-options";
 import {
   ProjectSelector,
@@ -81,12 +91,14 @@ export type ScheduleResource = {
   }>;
 };
 
-type DraftRow = {
+type DraftRow = ScheduleEditableFields & {
   id: string;
   projectJobNo: string | null;
   foremanEmployeeId: string | null;
   labourEmployeeIds: string[];
 };
+
+type SavedScheduleEdits = Record<string, ScheduleEditableFields>;
 
 const SAVED_ROW_PREFIX = "saved:";
 
@@ -102,29 +114,6 @@ function displayDate(value: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00.000Z`));
-}
-
-function TimingCell({ row }: { row: ScheduleBoardRow }) {
-  if (!row.campStartTime && !row.startTime && !row.endTime) {
-    return <span className="text-muted-foreground">—</span>;
-  }
-
-  return (
-    <div className="space-y-0.5 text-xs">
-      <div>
-        <span className="text-muted-foreground">Camp</span>{" "}
-        {row.campStartTime ?? "—"}
-      </div>
-      <div>
-        <span className="text-muted-foreground">Start</span>{" "}
-        {row.startTime ?? "—"}
-      </div>
-      <div>
-        <span className="text-muted-foreground">End</span>{" "}
-        {row.endTime ?? "—"}
-      </div>
-    </div>
-  );
 }
 
 function LabourCell({
@@ -215,15 +204,18 @@ export function DailyScheduleBoard({
     ? savedRowKey(initialSchedules[0].projectJobNo)
     : null;
   const [draftRows, setDraftRows] = useState<DraftRow[]>([]);
+  const [savedEdits, setSavedEdits] = useState<SavedScheduleEdits>({});
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(
     firstSavedKey,
   );
   const [deletingJobNo, setDeletingJobNo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const hasUnsavedChanges = draftRows.length > 0;
+  const dirtySavedCount = Object.keys(savedEdits).length;
+  const hasUnsavedChanges = draftRows.length > 0 || dirtySavedCount > 0;
 
   useEffect(() => {
     setSelectedRowKey(firstSavedKey);
+    setSavedEdits({});
   }, [selectedDate, firstSavedKey]);
 
   useEffect(() => {
@@ -302,6 +294,7 @@ export function DailyScheduleBoard({
     }
 
     setDraftRows([]);
+    setSavedEdits({});
     router.push(`/daily-schedule?date=${encodeURIComponent(date)}`);
   }
 
@@ -321,6 +314,10 @@ export function DailyScheduleBoard({
         projectJobNo: null,
         foremanEmployeeId: null,
         labourEmployeeIds: [],
+        campStartTime: "",
+        startTime: "",
+        endTime: "",
+        dailyTarget: "",
       },
     ]);
     setSelectedRowKey(id);
@@ -354,6 +351,38 @@ export function DailyScheduleBoard({
       ),
     );
     setSelectedRowKey(id);
+  }
+
+  function updateDraftField(
+    id: string,
+    field: keyof ScheduleEditableFields,
+    value: string,
+  ) {
+    setDraftRows((rows) =>
+      rows.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
+    );
+  }
+
+  function editableFieldsForSaved(schedule: ScheduleBoardRow) {
+    return (
+      savedEdits[schedule.projectJobNo] ??
+      scheduleEditableFieldsFrom(schedule)
+    );
+  }
+
+  function updateSavedField(
+    schedule: ScheduleBoardRow,
+    field: keyof ScheduleEditableFields,
+    value: string,
+  ) {
+    setSavedEdits((current) => ({
+      ...current,
+      [schedule.projectJobNo]: {
+        ...(current[schedule.projectJobNo] ??
+          scheduleEditableFieldsFrom(schedule)),
+        [field]: value,
+      },
+    }));
   }
 
   function blockedProjectJobNos(currentDraftId: string) {
@@ -481,17 +510,21 @@ export function DailyScheduleBoard({
     changes: {
       foremanEmployeeId?: string;
       labourEmployeeIds?: string[];
+      editableFields?: ScheduleEditableFields;
     } = {},
   ) {
+    const editable =
+      changes.editableFields ?? scheduleEditableFieldsFrom(schedule);
+
     return {
       scheduleDate: selectedDate,
       projectJobNo: schedule.projectJobNo,
       foremanEmployeeId:
         changes.foremanEmployeeId ?? schedule.foremanEmployeeId,
-      campStartTime: schedule.campStartTime ?? undefined,
-      startTime: schedule.startTime ?? undefined,
-      endTime: schedule.endTime ?? undefined,
-      dailyTarget: schedule.dailyTarget ?? undefined,
+      campStartTime: editable.campStartTime,
+      startTime: editable.startTime,
+      endTime: editable.endTime,
+      dailyTarget: editable.dailyTarget,
       driverEmployeeId: schedule.driverEmployeeId ?? undefined,
       equipmentVehicle: schedule.equipmentVehicle ?? undefined,
       labourEmployeeIds:
@@ -696,21 +729,56 @@ export function DailyScheduleBoard({
     });
   }
 
-  function saveDraftSchedules() {
-    const incomplete = draftRows.some(
+  function saveScheduleChanges() {
+    const incompleteDraft = draftRows.some(
       (row) => !row.projectJobNo || !row.foremanEmployeeId,
     );
+    const invalidDraftTiming = draftRows.some((row) =>
+      hasTimingErrors(validateTimingFields(row)),
+    );
+    const invalidSavedTiming = initialSchedules.some((schedule) => {
+      const edits = savedEdits[schedule.projectJobNo];
+      return edits
+        ? hasTimingErrors(validateTimingFields(edits))
+        : false;
+    });
 
-    if (draftRows.length === 0 || incomplete) {
+    if (
+      !hasUnsavedChanges ||
+      incompleteDraft ||
+      invalidDraftTiming ||
+      invalidSavedTiming
+    ) {
       return;
     }
 
     startTransition(async () => {
+      for (const schedule of initialSchedules) {
+        const editableFields = savedEdits[schedule.projectJobNo];
+
+        if (!editableFields) {
+          continue;
+        }
+
+        const result = await saveDailyScheduleAction(
+          schedulePayload(schedule, { editableFields }),
+        );
+
+        if (!result.ok) {
+          toast.error(result.error.message);
+          return;
+        }
+      }
+
       for (const row of draftRows) {
         const result = await saveDailyScheduleAction({
           scheduleDate: selectedDate,
           projectJobNo: row.projectJobNo,
           foremanEmployeeId: row.foremanEmployeeId,
+          campStartTime: row.campStartTime,
+          startTime: row.startTime,
+          endTime: row.endTime,
+          dailyTarget: row.dailyTarget,
           labourEmployeeIds: row.labourEmployeeIds,
         });
 
@@ -720,11 +788,14 @@ export function DailyScheduleBoard({
         }
       }
 
-      const count = draftRows.length;
+      const changeCount = dirtySavedCount + draftRows.length;
+      setSavedEdits({});
       setDraftRows([]);
       setSelectedRowKey(null);
       toast.success(
-        count === 1 ? "Schedule saved." : `${count} schedules saved.`,
+        changeCount === 1
+          ? "Schedule changes saved."
+          : `${changeCount} schedule rows saved.`,
       );
       router.refresh();
     });
@@ -808,11 +879,22 @@ export function DailyScheduleBoard({
   const draftForemanCount = draftRows.filter(
     (row) => row.foremanEmployeeId !== null,
   ).length;
-  const canSaveDrafts =
-    draftRows.length > 0 &&
-    draftRows.every(
-      (row) => row.projectJobNo !== null && row.foremanEmployeeId !== null,
-    );
+  const hasIncompleteDrafts = draftRows.some(
+    (row) => row.projectJobNo === null || row.foremanEmployeeId === null,
+  );
+  const hasInvalidTiming =
+    draftRows.some((row) =>
+      hasTimingErrors(validateTimingFields(row)),
+    ) ||
+    initialSchedules.some((schedule) => {
+      const edits = savedEdits[schedule.projectJobNo];
+      return edits
+        ? hasTimingErrors(validateTimingFields(edits))
+        : false;
+    });
+  const canSaveChanges =
+    hasUnsavedChanges && !hasIncompleteDrafts && !hasInvalidTiming;
+  const unsavedRowCount = draftRows.length + dirtySavedCount;
 
   return (
     <div className="space-y-4">
@@ -906,18 +988,20 @@ export function DailyScheduleBoard({
           </Button>
 
           <Button
-            onClick={saveDraftSchedules}
-            disabled={!canSaveDrafts || pending}
+            onClick={saveScheduleChanges}
+            disabled={!canSaveChanges || pending}
             title={
-              draftRows.length === 0
-                ? "No unsaved schedule rows."
-                : canSaveDrafts
-                  ? "Save new schedule rows."
-                  : "Select a project and foreman for every draft row."
+              !hasUnsavedChanges
+                ? "No unsaved schedule changes."
+                : hasIncompleteDrafts
+                  ? "Select a project and foreman for every draft row."
+                  : hasInvalidTiming
+                    ? "Correct the highlighted timing values before saving."
+                    : "Save schedule changes."
             }
           >
             <Save className="size-4" />
-            {pending && canSaveDrafts ? "Saving..." : "Save Schedule"}
+            {pending && canSaveChanges ? "Saving..." : "Save Schedule"}
           </Button>
         </div>
       </div>
@@ -978,6 +1062,9 @@ export function DailyScheduleBoard({
                       row.projectJobNo,
                       row.foremanEmployeeId,
                     );
+                    const editableFields = editableFieldsForSaved(row);
+                    const timingErrors =
+                      validateTimingFields(editableFields);
 
                     return (
                       <div
@@ -1050,16 +1137,31 @@ export function DailyScheduleBoard({
                           />
                         </div>
 
-                        <div className="px-3 py-3">
-                          <TimingCell row={row} />
+                        <div
+                          className="px-3 py-3"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <TimingEditor
+                            value={editableFields}
+                            errors={timingErrors}
+                            disabled={pending}
+                            onChange={(field, value) =>
+                              updateSavedField(row, field, value)
+                            }
+                          />
                         </div>
 
-                        <div className="px-3 py-3">
-                          <p className="whitespace-pre-wrap text-sm">
-                            {row.dailyTarget ?? (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </p>
+                        <div
+                          className="px-3 py-3"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <DailyTargetEditor
+                            value={editableFields.dailyTarget}
+                            disabled={pending}
+                            onChange={(value) =>
+                              updateSavedField(row, "dailyTarget", value)
+                            }
+                          />
                         </div>
                       </div>
                     );
@@ -1072,6 +1174,7 @@ export function DailyScheduleBoard({
                       row.projectJobNo,
                       row.foremanEmployeeId,
                     );
+                    const timingErrors = validateTimingFields(row);
 
                     return (
                       <div
@@ -1136,11 +1239,30 @@ export function DailyScheduleBoard({
                           />
                         </div>
 
-                        <div className="px-3 py-3 text-sm text-muted-foreground">
-                          —
+                        <div
+                          className="px-3 py-3"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <TimingEditor
+                            value={row}
+                            errors={timingErrors}
+                            disabled={pending}
+                            onChange={(field, value) =>
+                              updateDraftField(row.id, field, value)
+                            }
+                          />
                         </div>
-                        <div className="px-3 py-3 text-sm text-muted-foreground">
-                          —
+                        <div
+                          className="px-3 py-3"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <DailyTargetEditor
+                            value={row.dailyTarget}
+                            disabled={pending}
+                            onChange={(value) =>
+                              updateDraftField(row.id, "dailyTarget", value)
+                            }
+                          />
                         </div>
                       </div>
                     );
@@ -1161,8 +1283,8 @@ export function DailyScheduleBoard({
             </span>
             {hasUnsavedChanges ? (
               <span className="font-medium text-foreground">
-                {draftRows.length} unsaved{" "}
-                {draftRows.length === 1 ? "row" : "rows"}
+                {unsavedRowCount} unsaved{" "}
+                {unsavedRowCount === 1 ? "row" : "rows"}
               </span>
             ) : (
               <span>All loaded rows are saved</span>
