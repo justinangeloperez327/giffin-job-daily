@@ -8,6 +8,7 @@ import {
   Save,
   Trash2,
   UsersRound,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 
 import {
   deleteDailyScheduleAction,
+  moveLabourAssignmentAction,
   saveDailyScheduleAction,
 } from "@/app/daily-schedule/actions";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ import {
 } from "@/components/ui/sheet";
 import { ForemanSelector } from "@/features/daily-schedule/foreman-selector";
 import { buildForemanOptions } from "@/features/daily-schedule/foreman-options";
+import { buildLabourOptions } from "@/features/daily-schedule/labour-options";
 import {
   ProjectSelector,
   type ScheduleProjectOption,
@@ -82,6 +85,7 @@ type DraftRow = {
   id: string;
   projectJobNo: string | null;
   foremanEmployeeId: string | null;
+  labourEmployeeIds: string[];
 };
 
 const SAVED_ROW_PREFIX = "saved:";
@@ -119,6 +123,71 @@ function TimingCell({ row }: { row: ScheduleBoardRow }) {
         <span className="text-muted-foreground">End</span>{" "}
         {row.endTime ?? "—"}
       </div>
+    </div>
+  );
+}
+
+function LabourCell({
+  employeeIds,
+  resources,
+  pending,
+  onRemove,
+}: {
+  employeeIds: string[];
+  resources: ScheduleResource[];
+  pending: boolean;
+  onRemove: (employeeId: string) => void;
+}) {
+  const visible = employeeIds.slice(0, 3);
+
+  return (
+    <div>
+      <p className="text-sm font-medium">
+        {employeeIds.length} assigned
+      </p>
+
+      {employeeIds.length === 0 ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Select this row and use the Labour pool.
+        </p>
+      ) : (
+        <div className="mt-1.5 space-y-1">
+          {visible.map((employeeId) => {
+            const resource = resources.find(
+              (item) => item.employeeId === employeeId,
+            );
+
+            return (
+              <div
+                key={employeeId}
+                className="flex items-center justify-between gap-2 rounded-sm bg-muted/60 px-2 py-1"
+              >
+                <span className="min-w-0 truncate text-xs">
+                  {resource?.employeeName ?? employeeId}
+                </span>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemove(employeeId);
+                  }}
+                  className="shrink-0 rounded-sm p-0.5 text-muted-foreground hover:bg-background hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+                  aria-label={`Remove ${resource?.employeeName ?? employeeId}`}
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            );
+          })}
+
+          {employeeIds.length > visible.length ? (
+            <p className="px-1 text-xs text-muted-foreground">
+              +{employeeIds.length - visible.length} more
+            </p>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
@@ -182,13 +251,11 @@ export function DailyScheduleBoard({
       }
 
       const target = event.target;
-
       if (!(target instanceof Element)) {
         return;
       }
 
       const anchor = target.closest("a[href]");
-
       if (!(anchor instanceof HTMLAnchorElement)) {
         return;
       }
@@ -249,7 +316,12 @@ export function DailyScheduleBoard({
     nextDraftId.current += 1;
     setDraftRows((rows) => [
       ...rows,
-      { id, projectJobNo: null, foremanEmployeeId: null },
+      {
+        id,
+        projectJobNo: null,
+        foremanEmployeeId: null,
+        labourEmployeeIds: [],
+      },
     ]);
     setSelectedRowKey(id);
   }
@@ -273,6 +345,10 @@ export function DailyScheduleBoard({
                 row.projectJobNo === projectJobNo
                   ? row.foremanEmployeeId
                   : null,
+              labourEmployeeIds:
+                row.projectJobNo === projectJobNo
+                  ? row.labourEmployeeIds
+                  : [],
             }
           : row,
       ),
@@ -324,6 +400,47 @@ export function DailyScheduleBoard({
     );
   }
 
+  function selectedLaboursForRow(rowKey: string | null) {
+    if (!rowKey) {
+      return [];
+    }
+
+    if (rowKey.startsWith(SAVED_ROW_PREFIX)) {
+      const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
+      return (
+        initialSchedules.find(
+          (schedule) => schedule.projectJobNo === projectJobNo,
+        )?.labourEmployeeIds ?? []
+      );
+    }
+
+    return (
+      draftRows.find((row) => row.id === rowKey)?.labourEmployeeIds ?? []
+    );
+  }
+
+  function selectedDriverForRow(rowKey: string | null) {
+    if (!rowKey?.startsWith(SAVED_ROW_PREFIX)) {
+      return null;
+    }
+
+    const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
+    return (
+      initialSchedules.find(
+        (schedule) => schedule.projectJobNo === projectJobNo,
+      )?.driverEmployeeId ?? null
+    );
+  }
+
+  function draftResourceRows() {
+    return draftRows.map((row) => ({
+      rowKey: row.id,
+      projectJobNo: row.projectJobNo,
+      foremanEmployeeId: row.foremanEmployeeId,
+      labourEmployeeIds: row.labourEmployeeIds,
+    }));
+  }
+
   function foremanOptionsFor(
     rowKey: string,
     projectJobNo: string | null,
@@ -331,17 +448,55 @@ export function DailyScheduleBoard({
   ) {
     return buildForemanOptions({
       resources,
-      drafts: draftRows.map((row) => ({
-        rowKey: row.id,
-        projectJobNo: row.projectJobNo,
-        foremanEmployeeId: row.foremanEmployeeId,
-      })),
+      drafts: draftResourceRows(),
       projects,
       currentRowKey: rowKey,
       projectJobNo,
       selectedForemanId,
       savedRowKey,
     });
+  }
+
+  function labourOptionsFor(
+    rowKey: string,
+    projectJobNo: string | null,
+    selectedLabourIds: string[],
+    currentForemanId: string | null,
+    currentDriverId: string | null,
+  ) {
+    return buildLabourOptions({
+      resources,
+      drafts: draftResourceRows(),
+      currentRowKey: rowKey,
+      projectJobNo,
+      selectedLabourIds,
+      currentForemanId,
+      currentDriverId,
+      savedRowKey,
+    });
+  }
+
+  function schedulePayload(
+    schedule: ScheduleBoardRow,
+    changes: {
+      foremanEmployeeId?: string;
+      labourEmployeeIds?: string[];
+    } = {},
+  ) {
+    return {
+      scheduleDate: selectedDate,
+      projectJobNo: schedule.projectJobNo,
+      foremanEmployeeId:
+        changes.foremanEmployeeId ?? schedule.foremanEmployeeId,
+      campStartTime: schedule.campStartTime ?? undefined,
+      startTime: schedule.startTime ?? undefined,
+      endTime: schedule.endTime ?? undefined,
+      dailyTarget: schedule.dailyTarget ?? undefined,
+      driverEmployeeId: schedule.driverEmployeeId ?? undefined,
+      equipmentVehicle: schedule.equipmentVehicle ?? undefined,
+      labourEmployeeIds:
+        changes.labourEmployeeIds ?? schedule.labourEmployeeIds,
+    };
   }
 
   function assignForeman(rowKey: string, employeeId: string) {
@@ -368,18 +523,9 @@ export function DailyScheduleBoard({
       }
 
       startTransition(async () => {
-        const result = await saveDailyScheduleAction({
-          scheduleDate: selectedDate,
-          projectJobNo: schedule.projectJobNo,
-          foremanEmployeeId: employeeId,
-          campStartTime: schedule.campStartTime ?? undefined,
-          startTime: schedule.startTime ?? undefined,
-          endTime: schedule.endTime ?? undefined,
-          dailyTarget: schedule.dailyTarget ?? undefined,
-          driverEmployeeId: schedule.driverEmployeeId ?? undefined,
-          equipmentVehicle: schedule.equipmentVehicle ?? undefined,
-          labourEmployeeIds: schedule.labourEmployeeIds,
-        });
+        const result = await saveDailyScheduleAction(
+          schedulePayload(schedule, { foremanEmployeeId: employeeId }),
+        );
 
         if (!result.ok) {
           toast.error(result.error.message);
@@ -401,6 +547,155 @@ export function DailyScheduleBoard({
     setSelectedRowKey(rowKey);
   }
 
+  function assignLabours(rowKey: string, employeeIds: string[]) {
+    if (employeeIds.length === 0) {
+      return;
+    }
+
+    if (rowKey.startsWith(SAVED_ROW_PREFIX)) {
+      const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
+      const schedule = initialSchedules.find(
+        (item) => item.projectJobNo === projectJobNo,
+      );
+
+      if (!schedule) {
+        return;
+      }
+
+      const labourEmployeeIds = [
+        ...new Set([...schedule.labourEmployeeIds, ...employeeIds]),
+      ];
+
+      startTransition(async () => {
+        const result = await saveDailyScheduleAction(
+          schedulePayload(schedule, { labourEmployeeIds }),
+        );
+
+        if (!result.ok) {
+          toast.error(result.error.message);
+          return;
+        }
+
+        toast.success(
+          employeeIds.length === 1
+            ? "Labour assigned."
+            : `${employeeIds.length} labour assigned.`,
+        );
+        router.refresh();
+      });
+
+      return;
+    }
+
+    setDraftRows((rows) =>
+      rows.map((row) =>
+        row.id === rowKey
+          ? {
+              ...row,
+              labourEmployeeIds: [
+                ...new Set([...row.labourEmployeeIds, ...employeeIds]),
+              ],
+            }
+          : row,
+      ),
+    );
+    setSelectedRowKey(rowKey);
+  }
+
+  function removeLabour(rowKey: string, employeeId: string) {
+    const resource = resources.find((item) => item.employeeId === employeeId);
+
+    if (
+      !window.confirm(
+        `Remove ${resource?.employeeName ?? employeeId} from this project?`,
+      )
+    ) {
+      return;
+    }
+
+    if (rowKey.startsWith(SAVED_ROW_PREFIX)) {
+      const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
+      const schedule = initialSchedules.find(
+        (item) => item.projectJobNo === projectJobNo,
+      );
+
+      if (!schedule) {
+        return;
+      }
+
+      startTransition(async () => {
+        const result = await saveDailyScheduleAction(
+          schedulePayload(schedule, {
+            labourEmployeeIds: schedule.labourEmployeeIds.filter(
+              (id) => id !== employeeId,
+            ),
+          }),
+        );
+
+        if (!result.ok) {
+          toast.error(result.error.message);
+          return;
+        }
+
+        toast.success("Labour removed.");
+        router.refresh();
+      });
+
+      return;
+    }
+
+    setDraftRows((rows) =>
+      rows.map((row) =>
+        row.id === rowKey
+          ? {
+              ...row,
+              labourEmployeeIds: row.labourEmployeeIds.filter(
+                (id) => id !== employeeId,
+              ),
+            }
+          : row,
+      ),
+    );
+  }
+
+  function reassignLabour(employeeId: string, fromRowKey: string) {
+    if (
+      !selectedRowKey?.startsWith(SAVED_ROW_PREFIX) ||
+      !fromRowKey.startsWith(SAVED_ROW_PREFIX)
+    ) {
+      return;
+    }
+
+    const fromProjectJobNo = fromRowKey.slice(SAVED_ROW_PREFIX.length);
+    const toProjectJobNo = selectedRowKey.slice(SAVED_ROW_PREFIX.length);
+    const resource = resources.find((item) => item.employeeId === employeeId);
+
+    if (
+      !window.confirm(
+        `Move ${resource?.employeeName ?? employeeId} from ${fromProjectJobNo} to ${toProjectJobNo}?`,
+      )
+    ) {
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await moveLabourAssignmentAction({
+        scheduleDate: selectedDate,
+        employeeId,
+        fromProjectJobNo,
+        toProjectJobNo,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+
+      toast.success("Labour reassigned.");
+      router.refresh();
+    });
+  }
+
   function saveDraftSchedules() {
     const incomplete = draftRows.some(
       (row) => !row.projectJobNo || !row.foremanEmployeeId,
@@ -416,7 +711,7 @@ export function DailyScheduleBoard({
           scheduleDate: selectedDate,
           projectJobNo: row.projectJobNo,
           foremanEmployeeId: row.foremanEmployeeId,
-          labourEmployeeIds: [],
+          labourEmployeeIds: row.labourEmployeeIds,
         });
 
         if (!result.ok) {
@@ -469,6 +764,8 @@ export function DailyScheduleBoard({
 
   const selectedProjectJobNo = selectedProjectForRow(selectedRowKey);
   const selectedForemanId = selectedForemanForRow(selectedRowKey);
+  const selectedLabourIds = selectedLaboursForRow(selectedRowKey);
+  const selectedDriverId = selectedDriverForRow(selectedRowKey);
   const selectedProject = projects.find(
     (project) => project.jobNo === selectedProjectJobNo,
   );
@@ -477,6 +774,7 @@ export function DailyScheduleBoard({
   );
   const selectedLabel =
     selectedProject?.projectName ?? selectedSavedSchedule?.projectName;
+
   const selectedForemanOptions = selectedRowKey
     ? foremanOptionsFor(
         selectedRowKey,
@@ -485,10 +783,25 @@ export function DailyScheduleBoard({
       )
     : [];
 
-  const totalLabours = initialSchedules.reduce(
-    (sum, schedule) => sum + schedule.labourCount,
-    0,
-  );
+  const selectedLabourOptions = selectedRowKey
+    ? labourOptionsFor(
+        selectedRowKey,
+        selectedProjectJobNo,
+        selectedLabourIds,
+        selectedForemanId,
+        selectedDriverId,
+      )
+    : [];
+
+  const totalLabours =
+    initialSchedules.reduce(
+      (sum, schedule) => sum + schedule.labourEmployeeIds.length,
+      0,
+    ) +
+    draftRows.reduce(
+      (sum, row) => sum + row.labourEmployeeIds.length,
+      0,
+    );
   const selectedProjectCount = draftRows.filter(
     (row) => row.projectJobNo !== null,
   ).length;
@@ -557,15 +870,27 @@ export function DailyScheduleBoard({
                 <SheetTitle>Resource Pool</SheetTitle>
               </SheetHeader>
               <ResourcePoolPanel
+                contextKey={selectedRowKey ?? undefined}
                 totalEmployees={resources.length}
                 error={resourceError}
                 selectedLabel={selectedLabel}
                 foremen={selectedForemanOptions}
+                labours={selectedLabourOptions}
+                canReassignLabour={Boolean(
+                  selectedRowKey?.startsWith(SAVED_ROW_PREFIX),
+                )}
+                pending={pending}
                 onAssignForeman={(employeeId) => {
                   if (selectedRowKey) {
                     assignForeman(selectedRowKey, employeeId);
                   }
                 }}
+                onAssignLabours={(employeeIds) => {
+                  if (selectedRowKey) {
+                    assignLabours(selectedRowKey, employeeIds);
+                  }
+                }}
+                onReassignLabour={reassignLabour}
                 onViewAssignment={setSelectedRowKey}
               />
             </SheetContent>
@@ -648,7 +973,7 @@ export function DailyScheduleBoard({
                   {initialSchedules.map((row) => {
                     const rowKey = savedRowKey(row.projectJobNo);
                     const selected = selectedRowKey === rowKey;
-                    const options = foremanOptionsFor(
+                    const foremanOptions = foremanOptionsFor(
                       rowKey,
                       row.projectJobNo,
                       row.foremanEmployeeId,
@@ -705,7 +1030,7 @@ export function DailyScheduleBoard({
                           onClick={(event) => event.stopPropagation()}
                         >
                           <ForemanSelector
-                            options={options}
+                            options={foremanOptions}
                             value={row.foremanEmployeeId}
                             disabled={pending}
                             onValueChange={(employeeId) =>
@@ -715,18 +1040,14 @@ export function DailyScheduleBoard({
                         </div>
 
                         <div className="px-3 py-3">
-                          <p className="text-sm font-medium">
-                            {row.labourCount} assigned
-                          </p>
-                          {row.labourNames.length > 0 ? (
-                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                              {row.labourNames.join(", ")}
-                            </p>
-                          ) : (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              No labour assigned
-                            </p>
-                          )}
+                          <LabourCell
+                            employeeIds={row.labourEmployeeIds}
+                            resources={resources}
+                            pending={pending}
+                            onRemove={(employeeId) =>
+                              removeLabour(rowKey, employeeId)
+                            }
+                          />
                         </div>
 
                         <div className="px-3 py-3">
@@ -746,7 +1067,7 @@ export function DailyScheduleBoard({
 
                   {draftRows.map((row) => {
                     const selected = selectedRowKey === row.id;
-                    const options = foremanOptionsFor(
+                    const foremanOptions = foremanOptionsFor(
                       row.id,
                       row.projectJobNo,
                       row.foremanEmployeeId,
@@ -795,7 +1116,7 @@ export function DailyScheduleBoard({
                           onClick={(event) => event.stopPropagation()}
                         >
                           <ForemanSelector
-                            options={options}
+                            options={foremanOptions}
                             value={row.foremanEmployeeId}
                             disabled={!row.projectJobNo || pending}
                             onValueChange={(employeeId) =>
@@ -804,9 +1125,17 @@ export function DailyScheduleBoard({
                           />
                         </div>
 
-                        <div className="px-3 py-3 text-sm text-muted-foreground">
-                          0 assigned
+                        <div className="px-3 py-3">
+                          <LabourCell
+                            employeeIds={row.labourEmployeeIds}
+                            resources={resources}
+                            pending={pending}
+                            onRemove={(employeeId) =>
+                              removeLabour(row.id, employeeId)
+                            }
+                          />
                         </div>
+
                         <div className="px-3 py-3 text-sm text-muted-foreground">
                           —
                         </div>
@@ -843,15 +1172,27 @@ export function DailyScheduleBoard({
 
         <aside className="sticky top-[4.5rem] hidden h-[calc(100vh-6.5rem)] overflow-hidden rounded-lg border bg-card xl:block">
           <ResourcePoolPanel
+            contextKey={selectedRowKey ?? undefined}
             totalEmployees={resources.length}
             error={resourceError}
             selectedLabel={selectedLabel}
             foremen={selectedForemanOptions}
+            labours={selectedLabourOptions}
+            canReassignLabour={Boolean(
+              selectedRowKey?.startsWith(SAVED_ROW_PREFIX),
+            )}
+            pending={pending}
             onAssignForeman={(employeeId) => {
               if (selectedRowKey) {
                 assignForeman(selectedRowKey, employeeId);
               }
             }}
+            onAssignLabours={(employeeIds) => {
+              if (selectedRowKey) {
+                assignLabours(selectedRowKey, employeeIds);
+              }
+            }}
+            onReassignLabour={reassignLabour}
             onViewAssignment={setSelectedRowKey}
           />
         </aside>
