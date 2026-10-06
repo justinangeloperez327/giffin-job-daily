@@ -31,6 +31,8 @@ export {
 export {
   dailyScheduleInputSchema,
   dailyScheduleKeySchema,
+  labourReassignmentSchema,
   type DailyScheduleInput,
   type DailyScheduleKey,
+  type LabourReassignment,
 } from "@/lib/validation/schedule";

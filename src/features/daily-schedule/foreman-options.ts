@@ -15,6 +15,7 @@ export type DraftForemanAssignment = {
   rowKey: string;
   projectJobNo: string | null;
   foremanEmployeeId: string | null;
+  labourEmployeeIds: string[];
 };
 
 export type ProjectReference = {
@@ -22,15 +23,7 @@ export type ProjectReference = {
 };
 
 function roleLabel(role: "FOREMAN" | "LABOUR" | "DRIVER") {
-  if (role === "FOREMAN") {
-    return "Foreman";
-  }
-
-  if (role === "DRIVER") {
-    return "Driver";
-  }
-
-  return "Labour";
+  return role === "FOREMAN" ? "Foreman" : role === "DRIVER" ? "Driver" : "Labour";
 }
 
 export function buildForemanOptions({
@@ -50,18 +43,6 @@ export function buildForemanOptions({
   selectedForemanId: string | null;
   savedRowKey: (projectJobNo: string) => string;
 }): ForemanOption[] {
-  const draftAssignments = drafts
-    .filter(
-      (row) =>
-        row.rowKey !== currentRowKey &&
-        row.foremanEmployeeId !== null,
-    )
-    .map((row) => ({
-      employeeId: row.foremanEmployeeId as string,
-      rowKey: row.rowKey,
-      projectJobNo: row.projectJobNo,
-    }));
-
   return resources
     .filter(
       (resource) =>
@@ -70,28 +51,43 @@ export function buildForemanOptions({
     )
     .map((resource) => {
       const selected = resource.employeeId === selectedForemanId;
+      const currentDraft = drafts.find((row) => row.rowKey === currentRowKey);
+      const currentLabourBlock = currentDraft?.labourEmployeeIds.includes(resource.employeeId);
       const databaseBlocker = resource.assignments.find(
         (assignment) =>
           assignment.projectJobNo !== projectJobNo ||
           assignment.role !== "FOREMAN",
       );
-      const draftBlocker = draftAssignments.find(
-        (assignment) => assignment.employeeId === resource.employeeId,
-      );
+      const draftBlocker = drafts
+        .filter((row) => row.rowKey !== currentRowKey)
+        .map((row) => {
+          if (row.foremanEmployeeId === resource.employeeId) {
+            return { role: "FOREMAN" as const, rowKey: row.rowKey, projectJobNo: row.projectJobNo };
+          }
+          if (row.labourEmployeeIds.includes(resource.employeeId)) {
+            return { role: "LABOUR" as const, rowKey: row.rowKey, projectJobNo: row.projectJobNo };
+          }
+          return null;
+        })
+        .find((assignment) => assignment !== null);
 
       const available =
-        selected || (!databaseBlocker && !draftBlocker && Boolean(projectJobNo));
+        selected ||
+        (!currentLabourBlock &&
+          !databaseBlocker &&
+          !draftBlocker &&
+          Boolean(projectJobNo));
 
       let statusLabel: string | undefined;
       let assignmentRowKey: string | undefined;
 
       if (selected) {
         statusLabel = "Selected";
+      } else if (currentLabourBlock) {
+        statusLabel = "Labour on this project";
       } else if (draftBlocker) {
-        const project = projects.find(
-          (item) => item.jobNo === draftBlocker.projectJobNo,
-        );
-        statusLabel = `Assigned → ${project?.jobNo ?? "Draft"}`;
+        const project = projects.find((item) => item.jobNo === draftBlocker.projectJobNo);
+        statusLabel = `${roleLabel(draftBlocker.role)} → ${project?.jobNo ?? "Draft"}`;
         assignmentRowKey = draftBlocker.rowKey;
       } else if (databaseBlocker) {
         statusLabel = `${roleLabel(databaseBlocker.role)} → ${databaseBlocker.projectJobNo}`;

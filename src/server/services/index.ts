@@ -1,5 +1,6 @@
 export {
   deleteDailySchedule,
+  moveLabourAssignment,
   saveDailySchedule,
   type SavedDailySchedule,
 } from "@/server/services/daily-schedule";

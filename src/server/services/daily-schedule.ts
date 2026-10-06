@@ -13,6 +13,7 @@ import {
 import {
   dailyScheduleInputSchema,
   dailyScheduleKeySchema,
+  labourReassignmentSchema,
   type DailyScheduleInput,
 } from "@/lib/validation/schedule";
 import { ApplicationError, mapDatabaseError } from "@/server/database/errors";
@@ -31,11 +32,7 @@ type ScheduleEmployee = {
 
 export type SavedDailySchedule = {
   scheduleDate: string;
-  project: {
-    jobNo: string;
-    soNo: string;
-    projectName: string;
-  };
+  project: { jobNo: string; soNo: string; projectName: string };
   foreman: ScheduleEmployee;
   driver: ScheduleEmployee | null;
   campStartTime: string | null;
@@ -53,11 +50,7 @@ function toSavedSchedule(schedule: {
   endTime: Date | null;
   dailyTarget: string | null;
   equipmentVehicle: string | null;
-  project: {
-    jobNo: string;
-    soNo: string;
-    projectName: string;
-  };
+  project: { jobNo: string; soNo: string; projectName: string };
   foreman: ScheduleEmployee;
   driver: ScheduleEmployee | null;
   labours: Array<{ labour: ScheduleEmployee }>;
@@ -84,14 +77,9 @@ function collectRequestedEmployees(input: DailyScheduleInput): string[] {
   ];
 }
 
-export async function saveDailySchedule(
-  input: unknown,
-): Promise<ActionResult<SavedDailySchedule>> {
+export async function saveDailySchedule(input: unknown): Promise<ActionResult<SavedDailySchedule>> {
   const parsed = dailyScheduleInputSchema.safeParse(input);
-
-  if (!parsed.success) {
-    return validationFailure(parsed.error);
-  }
+  if (!parsed.success) return validationFailure(parsed.error);
 
   try {
     const saved = await withSerializableTransaction(async (transaction) => {
@@ -100,81 +88,35 @@ export async function saveDailySchedule(
       const requestedEmployeeIds = collectRequestedEmployees(value);
 
       const [project, employees, otherSchedules] = await Promise.all([
-        transaction.project.findUnique({
-          where: { jobNo: value.projectJobNo },
-          select: { jobNo: true },
-        }),
-        transaction.labour.findMany({
-          where: {
-            employeeId: {
-              in: requestedEmployeeIds,
-            },
-          },
-          select: {
-            employeeId: true,
-          },
-        }),
+        transaction.project.findUnique({ where: { jobNo: value.projectJobNo }, select: { jobNo: true } }),
+        transaction.labour.findMany({ where: { employeeId: { in: requestedEmployeeIds } }, select: { employeeId: true } }),
         transaction.dailySchedule.findMany({
-          where: {
-            scheduleDate,
-            NOT: {
-              projectJobNo: value.projectJobNo,
-            },
-          },
+          where: { scheduleDate, NOT: { projectJobNo: value.projectJobNo } },
           select: {
             projectJobNo: true,
             foremanEmployeeId: true,
             driverEmployeeId: true,
-            labours: {
-              select: {
-                employeeId: true,
-              },
-            },
+            labours: { select: { employeeId: true } },
           },
         }),
       ]);
 
-      if (!project) {
-        throw new ApplicationError(
-          "INVALID_REFERENCE",
-          "The selected project does not exist.",
-        );
-      }
+      if (!project) throw new ApplicationError("INVALID_REFERENCE", "The selected project does not exist.");
 
-      const existingEmployeeIds = new Set(
-        employees.map((employee) => employee.employeeId),
-      );
-      const missingEmployeeIds = requestedEmployeeIds.filter(
-        (employeeId) => !existingEmployeeIds.has(employeeId),
-      );
-
+      const existingEmployeeIds = new Set(employees.map((employee) => employee.employeeId));
+      const missingEmployeeIds = requestedEmployeeIds.filter((employeeId) => !existingEmployeeIds.has(employeeId));
       if (missingEmployeeIds.length > 0) {
-        throw new ApplicationError(
-          "INVALID_REFERENCE",
-          `Employee not found: ${missingEmployeeIds.join(", ")}.`,
-        );
+        throw new ApplicationError("INVALID_REFERENCE", `Employee not found: ${missingEmployeeIds.join(", ")}.`);
       }
 
       const conflicts = buildResourceConflictMap(otherSchedules);
-      const requestedConflict = findFirstResourceConflict(
-        requestedEmployeeIds,
-        conflicts,
-      );
-
+      const requestedConflict = findFirstResourceConflict(requestedEmployeeIds, conflicts);
       if (requestedConflict) {
-        throw new ApplicationError(
-          "CONFLICT",
-          `Employee ${requestedConflict.employeeId} is ${requestedConflict.message}.`,
-        );
+        throw new ApplicationError("CONFLICT", `Employee ${requestedConflict.employeeId} is ${requestedConflict.message}.`);
       }
 
       await transaction.dailySchedule.upsert({
-        where: {
-          scheduleDate_projectJobNo: {
-            scheduleDate,
-            projectJobNo: value.projectJobNo,
-          },
-        },
+        where: { scheduleDate_projectJobNo: { scheduleDate, projectJobNo: value.projectJobNo } },
         create: {
           scheduleDate,
           projectJobNo: value.projectJobNo,
@@ -197,54 +139,25 @@ export async function saveDailySchedule(
         },
       });
 
-      await transaction.dailyScheduleLabour.deleteMany({
-        where: {
-          scheduleDate,
-          projectJobNo: value.projectJobNo,
-        },
-      });
+      await transaction.dailyScheduleLabour.deleteMany({ where: { scheduleDate, projectJobNo: value.projectJobNo } });
 
       if (value.labourEmployeeIds.length > 0) {
         await transaction.dailyScheduleLabour.createMany({
-          data: value.labourEmployeeIds.map((employeeId) => ({
-            scheduleDate,
-            projectJobNo: value.projectJobNo,
-            employeeId,
-          })),
+          data: value.labourEmployeeIds.map((employeeId) => ({ scheduleDate, projectJobNo: value.projectJobNo, employeeId })),
         });
       }
 
       const schedule = await transaction.dailySchedule.findUnique({
-        where: {
-          scheduleDate_projectJobNo: {
-            scheduleDate,
-            projectJobNo: value.projectJobNo,
-          },
-        },
+        where: { scheduleDate_projectJobNo: { scheduleDate, projectJobNo: value.projectJobNo } },
         include: {
           project: true,
           foreman: true,
           driver: true,
-          labours: {
-            include: {
-              labour: true,
-            },
-            orderBy: {
-              labour: {
-                employeeName: "asc",
-              },
-            },
-          },
+          labours: { include: { labour: true }, orderBy: { labour: { employeeName: "asc" } } },
         },
       });
 
-      if (!schedule) {
-        throw new ApplicationError(
-          "NOT_FOUND",
-          "The schedule could not be loaded after saving.",
-        );
-      }
-
+      if (!schedule) throw new ApplicationError("NOT_FOUND", "The schedule could not be loaded after saving.");
       return toSavedSchedule(schedule);
     });
 
@@ -254,33 +167,84 @@ export async function saveDailySchedule(
   }
 }
 
+export async function moveLabourAssignment(input: unknown): Promise<ActionResult<{
+  scheduleDate: string;
+  employeeId: string;
+  fromProjectJobNo: string;
+  toProjectJobNo: string;
+}>> {
+  const parsed = labourReassignmentSchema.safeParse(input);
+  if (!parsed.success) return validationFailure(parsed.error);
+
+  try {
+    const moved = await withSerializableTransaction(async (transaction) => {
+      const value = parsed.data;
+      const scheduleDate = parseScheduleDate(value.scheduleDate);
+
+      const [sourceAssignment, targetSchedule, daySchedules] = await Promise.all([
+        transaction.dailyScheduleLabour.findFirst({
+          where: { scheduleDate, projectJobNo: value.fromProjectJobNo, employeeId: value.employeeId },
+          select: { employeeId: true },
+        }),
+        transaction.dailySchedule.findUnique({
+          where: { scheduleDate_projectJobNo: { scheduleDate, projectJobNo: value.toProjectJobNo } },
+          select: { projectJobNo: true, foremanEmployeeId: true, driverEmployeeId: true },
+        }),
+        transaction.dailySchedule.findMany({
+          where: { scheduleDate },
+          select: {
+            projectJobNo: true,
+            foremanEmployeeId: true,
+            driverEmployeeId: true,
+            labours: { select: { employeeId: true } },
+          },
+        }),
+      ]);
+
+      if (!sourceAssignment) throw new ApplicationError("NOT_FOUND", "The labour assignment to move no longer exists.");
+      if (!targetSchedule) throw new ApplicationError("NOT_FOUND", "The target schedule no longer exists.");
+      if (targetSchedule.foremanEmployeeId === value.employeeId || targetSchedule.driverEmployeeId === value.employeeId) {
+        throw new ApplicationError("CONFLICT", "The employee already has another role on the target project.");
+      }
+
+      const conflicts = buildResourceConflictMap(
+        daySchedules.filter((schedule) => schedule.projectJobNo !== value.fromProjectJobNo),
+      );
+      const conflict = conflicts.get(value.employeeId);
+      if (conflict) {
+        throw new ApplicationError("CONFLICT", `Employee ${value.employeeId} is ${conflict.message}.`);
+      }
+
+      await transaction.dailyScheduleLabour.deleteMany({
+        where: { scheduleDate, projectJobNo: value.fromProjectJobNo, employeeId: value.employeeId },
+      });
+      await transaction.dailyScheduleLabour.create({
+        data: { scheduleDate, projectJobNo: value.toProjectJobNo, employeeId: value.employeeId },
+      });
+
+      return value;
+    });
+
+    return actionSuccess(moved);
+  } catch (error) {
+    return actionFailure(mapDatabaseError(error));
+  }
+}
+
 export async function deleteDailySchedule(
   scheduleDate: string,
   projectJobNo: string,
 ): Promise<ActionResult<{ scheduleDate: string; projectJobNo: string }>> {
-  const parsed = dailyScheduleKeySchema.safeParse({
-    scheduleDate,
-    projectJobNo,
-  });
-
-  if (!parsed.success) {
-    return validationFailure(parsed.error);
-  }
+  const parsed = dailyScheduleKeySchema.safeParse({ scheduleDate, projectJobNo });
+  if (!parsed.success) return validationFailure(parsed.error);
 
   try {
     const date = parseScheduleDate(parsed.data.scheduleDate);
-
     await withSerializableTransaction(async (transaction) => {
       await transaction.dailySchedule.delete({
-        where: {
-          scheduleDate_projectJobNo: {
-            scheduleDate: date,
-            projectJobNo: parsed.data.projectJobNo,
-          },
-        },
+        where: { scheduleDate_projectJobNo: { scheduleDate: date, projectJobNo: parsed.data.projectJobNo } },
       });
     });
-
     return actionSuccess(parsed.data);
   } catch (error) {
     return actionFailure(mapDatabaseError(error));

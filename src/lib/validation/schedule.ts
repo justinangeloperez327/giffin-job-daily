@@ -13,6 +13,18 @@ export const dailyScheduleKeySchema = z.object({
   projectJobNo: requiredText("Project", 50),
 });
 
+export const labourReassignmentSchema = z
+  .object({
+    scheduleDate: scheduleDateSchema,
+    employeeId: requiredText("Labour employee ID", 50),
+    fromProjectJobNo: requiredText("Source project", 50),
+    toProjectJobNo: requiredText("Target project", 50),
+  })
+  .refine((value) => value.fromProjectJobNo !== value.toProjectJobNo, {
+    path: ["toProjectJobNo"],
+    message: "Source and target projects must be different.",
+  });
+
 export const dailyScheduleInputSchema = z
   .object({
     scheduleDate: scheduleDateSchema,
@@ -98,3 +110,4 @@ export const dailyScheduleInputSchema = z
 
 export type DailyScheduleKey = z.infer<typeof dailyScheduleKeySchema>;
 export type DailyScheduleInput = z.infer<typeof dailyScheduleInputSchema>;
+export type LabourReassignment = z.infer<typeof labourReassignmentSchema>;
