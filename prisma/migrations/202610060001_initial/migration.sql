@@ -1,7 +1,7 @@
 CREATE TABLE "projects" (
     "project_name" TEXT NOT NULL,
     "job_no" TEXT NOT NULL,
-    "so_no" TEXT,
+    "so_no" TEXT NOT NULL,
 
     CONSTRAINT "projects_pkey" PRIMARY KEY ("job_no")
 );
