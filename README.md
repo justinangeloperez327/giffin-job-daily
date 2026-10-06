@@ -12,6 +12,7 @@ Daily project and labour scheduling application built with Next.js, TypeScript, 
 - Prisma ORM 7.10.0
 - PostgreSQL 18
 - Zod 4.6.5
+- Vitest 5.0.3
 
 ## Database
 
@@ -111,7 +112,9 @@ src/lib/validation
 
 Repositories provide reusable read queries for projects, labours, schedules, and schedule labour assignments.
 
-The availability service calculates each employee's assignments for a selected date and returns whether the employee is currently available.
+The availability service returns each employee's same-day assignments, whether those assignments block selection, and whether the employee is already assigned to the schedule currently being edited. Assignments on the current project therefore remain selectable while assignments on another project remain blocked.
+
+Resource-conflict evaluation is centralized and shared by schedule writes and future UI/API preflight checks.
 
 Schedule writes use a serializable Prisma transaction. A save:
 
@@ -125,6 +128,23 @@ Schedule writes use a serializable Prisma transaction. A save:
 Serialization conflicts are retried up to three times with a short backoff. Prisma/database failures are mapped to a consistent application error structure.
 
 The Prisma entry point is marked `server-only` so database code cannot accidentally be imported into Client Components.
+
+## Testing
+
+Run the shared business-rule test suite with:
+
+```bash
+npm test
+```
+
+Current unit coverage includes:
+
+- schedule date and time parsing
+- duplicate labour validation
+- foreman/labour role conflicts
+- driver/foreman and driver/labour conflicts
+- timing validation
+- resource conflict mapping and lookup
 
 ## Local setup
 
@@ -148,7 +168,14 @@ The Prisma entry point is marked `server-only` so database code cannot accidenta
    npm run db:deploy
    ```
 
-6. Start development:
+6. Run validation checks:
+
+   ```bash
+   npm run typecheck
+   npm test
+   ```
+
+7. Start development:
 
    ```bash
    npm run dev
