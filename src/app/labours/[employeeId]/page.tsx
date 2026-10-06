@@ -27,6 +27,7 @@ function displayDate(value: Date) {
 function AssignmentTable({
   rows,
   emptyText,
+  totalCount,
 }: {
   rows: Array<{
     key: string;
@@ -35,6 +36,7 @@ function AssignmentTable({
     projectName: string;
   }>;
   emptyText: string;
+  totalCount: number;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border bg-card">
@@ -59,13 +61,22 @@ function AssignmentTable({
             ))
           ) : (
             <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={3} className="h-28 text-center text-sm text-muted-foreground">
+              <TableCell
+                colSpan={3}
+                className="h-28 text-center text-sm text-muted-foreground"
+              >
                 {emptyText}
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
+
+      {totalCount > rows.length ? (
+        <div className="border-t px-3 py-2 text-xs text-muted-foreground">
+          Showing the latest {rows.length} of {totalCount} assignments.
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -168,6 +179,7 @@ export default async function LabourDetailPage({
         </div>
         <AssignmentTable
           rows={foremanRows}
+          totalCount={labour._count.foremanSchedules}
           emptyText="No foreman assignments."
         />
       </section>
@@ -183,6 +195,7 @@ export default async function LabourDetailPage({
         </div>
         <AssignmentTable
           rows={labourRows}
+          totalCount={labour._count.scheduleAssignments}
           emptyText="No labour assignments."
         />
       </section>
@@ -198,6 +211,7 @@ export default async function LabourDetailPage({
         </div>
         <AssignmentTable
           rows={driverRows}
+          totalCount={labour._count.driverSchedules}
           emptyText="No driver assignments."
         />
       </section>
