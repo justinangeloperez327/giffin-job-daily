@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dailyScheduleInputSchema } from "@/lib/validation/schedule";
+import {\n  dailyScheduleInputSchema,\n  labourReassignmentSchema,\n} from "@/lib/validation/schedule";
 
 const validSchedule = {
   scheduleDate: "2026-10-06",
@@ -74,5 +74,30 @@ describe("daily schedule validation", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+});
+
+
+describe("labour reassignment validation", () => {
+  it("accepts moving labour between different projects", () => {
+    expect(
+      labourReassignmentSchema.safeParse({
+        scheduleDate: "2026-10-06",
+        employeeId: "EMP-L1",
+        fromProjectJobNo: "JOB-001",
+        toProjectJobNo: "JOB-002",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects reassignment to the same project", () => {
+    expect(
+      labourReassignmentSchema.safeParse({
+        scheduleDate: "2026-10-06",
+        employeeId: "EMP-L1",
+        fromProjectJobNo: "JOB-001",
+        toProjectJobNo: "JOB-001",
+      }).success,
+    ).toBe(false);
   });
 });
