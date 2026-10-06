@@ -566,7 +566,7 @@ export function DailyScheduleBoard({
                             variant="ghost"
                             size="icon"
                             className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
-                            disabled={pending}
+                            disabled={pending && deletingJobNo === row.projectJobNo}
                             onClick={(event) => {
                               event.stopPropagation();
                               removeSavedSchedule(
