@@ -385,10 +385,10 @@ export function DailyScheduleBoard({
     setSelectedRowKey(id);
   }
 
-  function updateDraftField(
+  function updateDraftField<K extends keyof ScheduleRowEditableFields>(
     id: string,
-    field: keyof ScheduleRowEditableFields,
-    value: string | null,
+    field: K,
+    value: ScheduleRowEditableFields[K],
   ) {
     setDraftRows((rows) =>
       rows.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
@@ -406,10 +406,10 @@ export function DailyScheduleBoard({
     );
   }
 
-  function updateSavedField(
+  function updateSavedField<K extends keyof ScheduleRowEditableFields>(
     schedule: ScheduleBoardRow,
-    field: keyof ScheduleRowEditableFields,
-    value: string | null,
+    field: K,
+    value: ScheduleRowEditableFields[K],
   ) {
     setSavedEdits((current) => ({
       ...current,
