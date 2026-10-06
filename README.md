@@ -135,30 +135,36 @@ Changing an employee ID updates related schedule references through the configur
 The Daily Schedule workspace provides:
 
 - previous/next day navigation
-- native date selection
-- Today navigation
+- native date selection and Today navigation
 - configurable business timezone through `APP_TIME_ZONE`
-- saved schedule rows loaded for the selected date
-- project, foreman, labour, timing, and daily-target board columns
-- add/remove draft rows
-- persisted schedule-row deletion
-- selected-row state
+- saved and draft schedule rows for the selected date
 - searchable project selection by project name, job number, or SO number
-- selected project metadata in draft rows
-- duplicate-project prevention across saved and draft rows for the same date
-- sticky desktop resource-pool shell
-- mobile resource-pool sheet
-- available/assigned employee summary
-- unsaved-change protection
-- empty-day state
-- loading skeleton
-- daily project/labour/foreman summary
+- duplicate-project prevention across saved and draft rows
+- direct foreman selection plus the right-side Foremen resource pool
+- searchable/filterable Labour resource pool with checkbox multi-select
+- bulk labour assignment, individual removal, and saved-project reassignment
+- same-day and cross-role resource conflict prevention
+- inline Camp Start, Start, and End time editing
+- inline Daily Target editing
+- timing validation before save
+- dirty-row tracking for saved schedules
+- unsaved-change protection for browser unload, internal navigation, and date changes
+- persisted schedule-row deletion
+- sticky desktop resource pool and mobile resource-pool sheet
+- empty-day state, loading skeleton, and daily resource summary
 
-Project and foreman selection use the shadcn Popover + Command combobox pattern.
+Timing rules are enforced in both the editor and server validation:
 
-Foreman assignment now supports both the schedule-row selector and the right-side Foremen pool. The pool separates available and assigned foremen, exposes existing assignment context, prevents same-day and cross-role conflicts, and lets the planner jump to the blocking schedule row. Existing saved schedules require confirmation before foreman reassignment and preserve their labour, timing, target, driver, and equipment data.
+```text
+camp_start_time <= start_time
+start_time < end_time
+```
 
-A new schedule can be persisted once every draft row has both a project and foreman. Labour assignment remains optional and is added through Group 9.
+All timing fields remain optional. Clearing a time input saves it as `NULL`. Daily Target is optional and limited to 5,000 characters.
+
+Draft schedules can be saved once each row has a Project and Foreman. Labour, timing, and Daily Target can be added before the first save or edited later. Existing saved-row timing and Daily Target edits remain local until **Save Schedule** is pressed, and they participate in the same unsaved-change protection as new draft rows.
+
+Foreman and labour resource changes on already-saved rows are persisted immediately through the existing transaction-safe server actions. Dirty timing/target edits on the same row are preserved across those same-day refreshes until explicitly saved or discarded.
 
 ## Shared data layer
 
@@ -214,6 +220,7 @@ Current unit coverage includes:
 - foreman availability including draft labour conflicts
 - labour availability and draft-to-draft conflicts
 - labour reassignment input validation
+- timing editor normalization and ordering rules
 
 ## Local setup
 
