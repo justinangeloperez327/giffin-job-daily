@@ -48,7 +48,6 @@ model DailySchedule {
 
   @@id([scheduleDate, projectJobNo])
   @@unique([scheduleDate, foremanEmployeeId])
-  @@unique([scheduleDate, driverEmployeeId])
   @@index([projectJobNo])
   @@index([foremanEmployeeId])
   @@index([driverEmployeeId])
