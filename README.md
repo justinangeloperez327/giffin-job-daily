@@ -130,6 +130,28 @@ The Labours module provides:
 
 Changing an employee ID updates related schedule references through the configured database cascade.
 
+### Daily Schedule
+
+The Daily Schedule workspace currently provides the scheduling foundation:
+
+- previous/next day navigation
+- native date selection
+- Today navigation
+- configurable business timezone through `APP_TIME_ZONE`
+- saved schedule rows loaded for the selected date
+- project, foreman, labour, timing, and daily-target board columns
+- add/remove draft rows
+- persisted schedule-row deletion
+- unsaved-change protection for browser unload, internal links, and date changes
+- sticky desktop resource-pool shell
+- mobile resource-pool sheet
+- available/assigned employee summary
+- empty-day state
+- loading skeleton
+- daily project/labour/foreman summary
+
+Draft rows are intentionally not persisted until their required project and resource fields are available in the following scheduling groups.
+
 ## Shared data layer
 
 The server-side data layer is organized into:
@@ -171,6 +193,8 @@ npm test
 Current unit coverage includes:
 
 - schedule date and time parsing
+- business-timezone schedule dates
+- schedule-date shifting
 - project validation
 - labour validation
 - list-query normalization and sorting inputs
@@ -184,32 +208,33 @@ Current unit coverage includes:
 
 1. Copy `.env.example` to `.env`.
 2. Set `DATABASE_URL` to your PostgreSQL connection string.
-3. Install dependencies:
+3. Set `APP_TIME_ZONE` to the timezone used for daily schedule dates. The default application configuration is `Asia/Dubai`.
+4. Install dependencies:
 
    ```bash
    npm install
    ```
 
-4. Generate Prisma Client:
+5. Generate Prisma Client:
 
    ```bash
    npm run db:generate
    ```
 
-5. Apply the database migrations:
+6. Apply the database migrations:
 
    ```bash
    npm run db:deploy
    ```
 
-6. Run validation checks:
+7. Run validation checks:
 
    ```bash
    npm run typecheck
    npm test
    ```
 
-7. Start development:
+8. Start development:
 
    ```bash
    npm run dev
