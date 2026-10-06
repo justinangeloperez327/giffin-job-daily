@@ -19,7 +19,10 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-import { deleteDailyScheduleAction } from "@/app/daily-schedule/actions";
+import {
+  deleteDailyScheduleAction,
+  saveDailyScheduleAction,
+} from "@/app/daily-schedule/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,9 +33,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
+  ForemanSelector,
+  type ForemanOption,
+} from "@/features/daily-schedule/foreman-selector";
+import {
   ProjectSelector,
   type ScheduleProjectOption,
 } from "@/features/daily-schedule/project-selector";
+import { ResourcePoolPanel } from "@/features/daily-schedule/resource-pool";
 import { shiftScheduleDate } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 
@@ -44,21 +52,38 @@ export type ScheduleBoardRow = {
   foremanName: string;
   labourCount: number;
   labourNames: string[];
+  labourEmployeeIds: string[];
   campStartTime: string | null;
   startTime: string | null;
   endTime: string | null;
   dailyTarget: string | null;
+  driverEmployeeId: string | null;
+  equipmentVehicle: string | null;
 };
 
-export type ResourcePoolSummary = {
-  total: number;
-  available: number;
-  assigned: number;
+export type ScheduleResource = {
+  employeeId: string;
+  employeeName: string;
+  designation: string;
+  mobileNumber: string | null;
+  available: boolean;
+  assignedToCurrentSchedule: boolean;
+  assignments: Array<{
+    role: "FOREMAN" | "LABOUR" | "DRIVER";
+    projectJobNo: string;
+    projectName: string;
+  }>;
+  blockingAssignments: Array<{
+    role: "FOREMAN" | "LABOUR" | "DRIVER";
+    projectJobNo: string;
+    projectName: string;
+  }>;
 };
 
 type DraftRow = {
   id: string;
   projectJobNo: string | null;
+  foremanEmployeeId: string | null;
 };
 
 const SAVED_ROW_PREFIX = "saved:";
@@ -77,86 +102,16 @@ function displayDate(value: string) {
   }).format(new Date(`${value}T00:00:00.000Z`));
 }
 
-function ResourcePoolPanel({
-  summary,
-  error,
-  selectedLabel,
-}: {
-  summary: ResourcePoolSummary;
-  error?: string;
-  selectedLabel?: string;
-}) {
-  const [tab, setTab] = useState<"foremen" | "labours">("foremen");
+function roleLabel(role: "FOREMAN" | "LABOUR" | "DRIVER") {
+  if (role === "FOREMAN") {
+    return "Foreman";
+  }
 
-  return (
-    <div className="flex h-full min-h-80 flex-col">
-      <div className="border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <UsersRound className="size-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Resource Pool</h2>
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {summary.available} available · {summary.assigned} assigned
-        </p>
-      </div>
+  if (role === "DRIVER") {
+    return "Driver";
+  }
 
-      <div className="grid grid-cols-2 border-b p-1">
-        <button
-          type="button"
-          onClick={() => setTab("foremen")}
-          className={cn(
-            "h-8 rounded-md text-xs font-medium transition-colors",
-            tab === "foremen"
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Foremen
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("labours")}
-          className={cn(
-            "h-8 rounded-md text-xs font-medium transition-colors",
-            tab === "labours"
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Labours
-        </button>
-      </div>
-
-      <div className="flex flex-1 flex-col items-center justify-center px-5 py-8 text-center">
-        {error ? (
-          <>
-            <p className="text-sm font-medium">Resource pool unavailable</p>
-            <p className="mt-1 text-xs text-muted-foreground">{error}</p>
-          </>
-        ) : selectedLabel ? (
-          <>
-            <p className="text-sm font-medium">{selectedLabel}</p>
-            <p className="mt-1 max-w-56 text-xs text-muted-foreground">
-              {tab === "foremen"
-                ? "Foreman resources for this schedule row will appear here."
-                : "Labour search, filtering, and bulk assignment for this schedule row will appear here."}
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="text-sm font-medium">Select a schedule row</p>
-            <p className="mt-1 max-w-56 text-xs text-muted-foreground">
-              Choose a project row before assigning resources.
-            </p>
-          </>
-        )}
-      </div>
-
-      <div className="border-t px-4 py-2 text-xs text-muted-foreground">
-        {summary.total} total employees
-      </div>
-    </div>
-  );
+  return "Labour";
 }
 
 function TimingCell({ row }: { row: ScheduleBoardRow }) {
@@ -188,7 +143,7 @@ export function DailyScheduleBoard({
   initialSchedules,
   projects,
   projectError,
-  resourceSummary,
+  resources,
   resourceError,
 }: {
   selectedDate: string;
@@ -196,7 +151,7 @@ export function DailyScheduleBoard({
   initialSchedules: ScheduleBoardRow[];
   projects: ScheduleProjectOption[];
   projectError?: string;
-  resourceSummary: ResourcePoolSummary;
+  resources: ScheduleResource[];
   resourceError?: string;
 }) {
   const router = useRouter();
@@ -298,17 +253,18 @@ export function DailyScheduleBoard({
   }
 
   function handleDateChange(event: ChangeEvent<HTMLInputElement>) {
-    if (!event.target.value) {
-      return;
+    if (event.target.value) {
+      navigateToDate(event.target.value);
     }
-
-    navigateToDate(event.target.value);
   }
 
   function addDraftRow() {
     const id = `draft-${nextDraftId.current}`;
     nextDraftId.current += 1;
-    setDraftRows((rows) => [...rows, { id, projectJobNo: null }]);
+    setDraftRows((rows) => [
+      ...rows,
+      { id, projectJobNo: null, foremanEmployeeId: null },
+    ]);
     setSelectedRowKey(id);
   }
 
@@ -323,7 +279,16 @@ export function DailyScheduleBoard({
   function selectDraftProject(id: string, projectJobNo: string) {
     setDraftRows((rows) =>
       rows.map((row) =>
-        row.id === id ? { ...row, projectJobNo } : row,
+        row.id === id
+          ? {
+              ...row,
+              projectJobNo,
+              foremanEmployeeId:
+                row.projectJobNo === projectJobNo
+                  ? row.foremanEmployeeId
+                  : null,
+            }
+          : row,
       ),
     );
     setSelectedRowKey(id);
@@ -340,6 +305,195 @@ export function DailyScheduleBoard({
         )
         .map((row) => row.projectJobNo as string),
     ];
+  }
+
+  function selectedProjectForRow(rowKey: string | null) {
+    if (!rowKey) {
+      return null;
+    }
+
+    if (rowKey.startsWith(SAVED_ROW_PREFIX)) {
+      return rowKey.slice(SAVED_ROW_PREFIX.length);
+    }
+
+    return draftRows.find((row) => row.id === rowKey)?.projectJobNo ?? null;
+  }
+
+  function selectedForemanForRow(rowKey: string | null) {
+    if (!rowKey) {
+      return null;
+    }
+
+    if (rowKey.startsWith(SAVED_ROW_PREFIX)) {
+      const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
+      return (
+        initialSchedules.find(
+          (schedule) => schedule.projectJobNo === projectJobNo,
+        )?.foremanEmployeeId ?? null
+      );
+    }
+
+    return (
+      draftRows.find((row) => row.id === rowKey)?.foremanEmployeeId ?? null
+    );
+  }
+
+  function foremanOptionsFor(
+    rowKey: string,
+    projectJobNo: string | null,
+    selectedForemanId: string | null,
+  ): ForemanOption[] {
+    const draftAssignments = draftRows
+      .filter(
+        (row) =>
+          row.id !== rowKey &&
+          row.foremanEmployeeId !== null,
+      )
+      .map((row) => ({
+        employeeId: row.foremanEmployeeId as string,
+        rowKey: row.id,
+        projectJobNo: row.projectJobNo,
+      }));
+
+    return resources
+      .filter(
+        (resource) =>
+          resource.designation.toLowerCase().includes("foreman") ||
+          resource.employeeId === selectedForemanId,
+      )
+      .map((resource) => {
+        const selected = resource.employeeId === selectedForemanId;
+        const databaseBlocker = resource.assignments.find(
+          (assignment) =>
+            assignment.projectJobNo !== projectJobNo ||
+            assignment.role !== "FOREMAN",
+        );
+        const draftBlocker = draftAssignments.find(
+          (assignment) => assignment.employeeId === resource.employeeId,
+        );
+
+        const available =
+          selected || (!databaseBlocker && !draftBlocker && Boolean(projectJobNo));
+
+        let statusLabel: string | undefined;
+        let assignmentRowKey: string | undefined;
+
+        if (selected) {
+          statusLabel = "Selected";
+        } else if (draftBlocker) {
+          const project = projects.find(
+            (item) => item.jobNo === draftBlocker.projectJobNo,
+          );
+          statusLabel = `Assigned → ${project?.jobNo ?? "Draft"}`;
+          assignmentRowKey = draftBlocker.rowKey;
+        } else if (databaseBlocker) {
+          statusLabel = `${roleLabel(databaseBlocker.role)} → ${databaseBlocker.projectJobNo}`;
+          assignmentRowKey = savedRowKey(databaseBlocker.projectJobNo);
+        } else if (projectJobNo) {
+          statusLabel = "Available";
+        }
+
+        return {
+          employeeId: resource.employeeId,
+          employeeName: resource.employeeName,
+          designation: resource.designation,
+          available,
+          selected,
+          statusLabel,
+          assignmentRowKey,
+        };
+      });
+  }
+
+  function assignForeman(rowKey: string, employeeId: string) {
+    if (rowKey.startsWith(SAVED_ROW_PREFIX)) {
+      const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
+      const schedule = initialSchedules.find(
+        (item) => item.projectJobNo === projectJobNo,
+      );
+
+      if (!schedule || schedule.foremanEmployeeId === employeeId) {
+        return;
+      }
+
+      const foreman = resources.find(
+        (resource) => resource.employeeId === employeeId,
+      );
+
+      if (
+        !window.confirm(
+          `Reassign ${schedule.projectName} from ${schedule.foremanName} to ${foreman?.employeeName ?? employeeId}?`,
+        )
+      ) {
+        return;
+      }
+
+      startTransition(async () => {
+        const result = await saveDailyScheduleAction({
+          scheduleDate: selectedDate,
+          projectJobNo: schedule.projectJobNo,
+          foremanEmployeeId: employeeId,
+          campStartTime: schedule.campStartTime ?? undefined,
+          startTime: schedule.startTime ?? undefined,
+          endTime: schedule.endTime ?? undefined,
+          dailyTarget: schedule.dailyTarget ?? undefined,
+          driverEmployeeId: schedule.driverEmployeeId ?? undefined,
+          equipmentVehicle: schedule.equipmentVehicle ?? undefined,
+          labourEmployeeIds: schedule.labourEmployeeIds,
+        });
+
+        if (!result.ok) {
+          toast.error(result.error.message);
+          return;
+        }
+
+        toast.success("Foreman reassigned.");
+        router.refresh();
+      });
+
+      return;
+    }
+
+    setDraftRows((rows) =>
+      rows.map((row) =>
+        row.id === rowKey ? { ...row, foremanEmployeeId: employeeId } : row,
+      ),
+    );
+    setSelectedRowKey(rowKey);
+  }
+
+  function saveDraftSchedules() {
+    const incomplete = draftRows.some(
+      (row) => !row.projectJobNo || !row.foremanEmployeeId,
+    );
+
+    if (draftRows.length === 0 || incomplete) {
+      return;
+    }
+
+    startTransition(async () => {
+      for (const row of draftRows) {
+        const result = await saveDailyScheduleAction({
+          scheduleDate: selectedDate,
+          projectJobNo: row.projectJobNo,
+          foremanEmployeeId: row.foremanEmployeeId,
+          labourEmployeeIds: [],
+        });
+
+        if (!result.ok) {
+          toast.error(result.error.message);
+          return;
+        }
+      }
+
+      const count = draftRows.length;
+      setDraftRows([]);
+      setSelectedRowKey(null);
+      toast.success(
+        count === 1 ? "Schedule saved." : `${count} schedules saved.`,
+      );
+      router.refresh();
+    });
   }
 
   function removeSavedSchedule(projectJobNo: string, projectName: string) {
@@ -374,21 +528,23 @@ export function DailyScheduleBoard({
     });
   }
 
-  const selectedLabel = selectedRowKey
-    ? selectedRowKey.startsWith(SAVED_ROW_PREFIX)
-      ? initialSchedules.find(
-          (schedule) =>
-            schedule.projectJobNo ===
-            selectedRowKey.slice(SAVED_ROW_PREFIX.length),
-        )?.projectName
-      : (() => {
-          const draft = draftRows.find((row) => row.id === selectedRowKey);
-          const project = projects.find(
-            (item) => item.jobNo === draft?.projectJobNo,
-          );
-          return project?.projectName ?? "New project row";
-        })()
-    : undefined;
+  const selectedProjectJobNo = selectedProjectForRow(selectedRowKey);
+  const selectedForemanId = selectedForemanForRow(selectedRowKey);
+  const selectedProject = projects.find(
+    (project) => project.jobNo === selectedProjectJobNo,
+  );
+  const selectedSavedSchedule = initialSchedules.find(
+    (schedule) => schedule.projectJobNo === selectedProjectJobNo,
+  );
+  const selectedLabel =
+    selectedProject?.projectName ?? selectedSavedSchedule?.projectName;
+  const selectedForemanOptions = selectedRowKey
+    ? foremanOptionsFor(
+        selectedRowKey,
+        selectedProjectJobNo,
+        selectedForemanId,
+      )
+    : [];
 
   const totalLabours = initialSchedules.reduce(
     (sum, schedule) => sum + schedule.labourCount,
@@ -397,6 +553,14 @@ export function DailyScheduleBoard({
   const selectedProjectCount = draftRows.filter(
     (row) => row.projectJobNo !== null,
   ).length;
+  const draftForemanCount = draftRows.filter(
+    (row) => row.foremanEmployeeId !== null,
+  ).length;
+  const canSaveDrafts =
+    draftRows.length > 0 &&
+    draftRows.every(
+      (row) => row.projectJobNo !== null && row.foremanEmployeeId !== null,
+    );
 
   return (
     <div className="space-y-4">
@@ -454,9 +618,16 @@ export function DailyScheduleBoard({
                 <SheetTitle>Resource Pool</SheetTitle>
               </SheetHeader>
               <ResourcePoolPanel
-                summary={resourceSummary}
+                totalEmployees={resources.length}
                 error={resourceError}
                 selectedLabel={selectedLabel}
+                foremen={selectedForemanOptions}
+                onAssignForeman={(employeeId) => {
+                  if (selectedRowKey) {
+                    assignForeman(selectedRowKey, employeeId);
+                  }
+                }}
+                onViewAssignment={setSelectedRowKey}
               />
             </SheetContent>
           </Sheet>
@@ -464,22 +635,25 @@ export function DailyScheduleBoard({
           <Button
             variant="outline"
             onClick={addDraftRow}
-            disabled={projects.length === 0}
+            disabled={projects.length === 0 || pending}
           >
             <Plus className="size-4" />
             Add Project
           </Button>
 
           <Button
-            disabled
+            onClick={saveDraftSchedules}
+            disabled={!canSaveDrafts || pending}
             title={
-              selectedProjectCount > 0
-                ? "Assign a foreman before saving the new schedule row."
-                : "Select a project and foreman before saving."
+              draftRows.length === 0
+                ? "No unsaved schedule rows."
+                : canSaveDrafts
+                  ? "Save new schedule rows."
+                  : "Select a project and foreman for every draft row."
             }
           >
             <Save className="size-4" />
-            Save Schedule
+            {pending && canSaveDrafts ? "Saving..." : "Save Schedule"}
           </Button>
         </div>
       </div>
@@ -535,6 +709,11 @@ export function DailyScheduleBoard({
                   {initialSchedules.map((row) => {
                     const rowKey = savedRowKey(row.projectJobNo);
                     const selected = selectedRowKey === rowKey;
+                    const options = foremanOptionsFor(
+                      rowKey,
+                      row.projectJobNo,
+                      row.foremanEmployeeId,
+                    );
 
                     return (
                       <div
@@ -566,7 +745,9 @@ export function DailyScheduleBoard({
                             variant="ghost"
                             size="icon"
                             className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
-                            disabled={pending && deletingJobNo === row.projectJobNo}
+                            disabled={
+                              pending && deletingJobNo === row.projectJobNo
+                            }
                             onClick={(event) => {
                               event.stopPropagation();
                               removeSavedSchedule(
@@ -580,11 +761,18 @@ export function DailyScheduleBoard({
                           </Button>
                         </div>
 
-                        <div className="px-3 py-3">
-                          <p className="text-sm">{row.foremanName}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {row.foremanEmployeeId}
-                          </p>
+                        <div
+                          className="px-3 py-3"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <ForemanSelector
+                            options={options}
+                            value={row.foremanEmployeeId}
+                            disabled={pending}
+                            onValueChange={(employeeId) =>
+                              assignForeman(rowKey, employeeId)
+                            }
+                          />
                         </div>
 
                         <div className="px-3 py-3">
@@ -619,6 +807,11 @@ export function DailyScheduleBoard({
 
                   {draftRows.map((row) => {
                     const selected = selectedRowKey === row.id;
+                    const options = foremanOptionsFor(
+                      row.id,
+                      row.projectJobNo,
+                      row.foremanEmployeeId,
+                    );
 
                     return (
                       <div
@@ -640,12 +833,14 @@ export function DailyScheduleBoard({
                             onValueChange={(jobNo) =>
                               selectDraftProject(row.id, jobNo)
                             }
+                            disabled={pending}
                             error={projectError}
                           />
                           <Button
                             variant="ghost"
                             size="icon"
                             className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
+                            disabled={pending}
                             onClick={(event) => {
                               event.stopPropagation();
                               removeDraftRow(row.id);
@@ -656,16 +851,20 @@ export function DailyScheduleBoard({
                           </Button>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedRowKey(row.id);
-                          }}
-                          className="px-3 py-3 text-left text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                        <div
+                          className="px-3 py-3"
+                          onClick={(event) => event.stopPropagation()}
                         >
-                          Not selected
-                        </button>
+                          <ForemanSelector
+                            options={options}
+                            value={row.foremanEmployeeId}
+                            disabled={!row.projectJobNo || pending}
+                            onValueChange={(employeeId) =>
+                              assignForeman(row.id, employeeId)
+                            }
+                          />
+                        </div>
+
                         <div className="px-3 py-3 text-sm text-muted-foreground">
                           0 assigned
                         </div>
@@ -689,7 +888,8 @@ export function DailyScheduleBoard({
               {initialSchedules.length + selectedProjectCount === 1
                 ? "project"
                 : "projects"}{" "}
-              · {totalLabours} labour · {initialSchedules.length} foremen
+              · {totalLabours} labour ·{" "}
+              {initialSchedules.length + draftForemanCount} foremen
             </span>
             {hasUnsavedChanges ? (
               <span className="font-medium text-foreground">
@@ -704,9 +904,16 @@ export function DailyScheduleBoard({
 
         <aside className="sticky top-[4.5rem] hidden h-[calc(100vh-6.5rem)] overflow-hidden rounded-lg border bg-card xl:block">
           <ResourcePoolPanel
-            summary={resourceSummary}
+            totalEmployees={resources.length}
             error={resourceError}
             selectedLabel={selectedLabel}
+            foremen={selectedForemanOptions}
+            onAssignForeman={(employeeId) => {
+              if (selectedRowKey) {
+                assignForeman(selectedRowKey, employeeId);
+              }
+            }}
+            onViewAssignment={setSelectedRowKey}
           />
         </aside>
       </div>

@@ -1,8 +1,8 @@
 import { PageHeader } from "@/components/layout/page-header";
 import {
   DailyScheduleBoard,
-  type ResourcePoolSummary,
   type ScheduleBoardRow,
+  type ScheduleResource,
 } from "@/features/daily-schedule/daily-schedule-board";
 import type { ScheduleProjectOption } from "@/features/daily-schedule/project-selector";
 import {
@@ -64,28 +64,23 @@ export default async function DailySchedulePage({
     labourNames: schedule.labours
       .slice(0, 4)
       .map((assignment) => assignment.labour.employeeName),
+    labourEmployeeIds: schedule.labours.map(
+      (assignment) => assignment.labour.employeeId,
+    ),
     campStartTime: formatTimeValue(schedule.campStartTime),
     startTime: formatTimeValue(schedule.startTime),
     endTime: formatTimeValue(schedule.endTime),
     dailyTarget: schedule.dailyTarget,
+    driverEmployeeId: schedule.driver?.employeeId ?? null,
+    equipmentVehicle: schedule.equipmentVehicle,
   }));
-
-  const resourceSummary: ResourcePoolSummary = resourceResult.ok
-    ? {
-        total: resourceResult.data.length,
-        available: resourceResult.data.filter((resource) => resource.available)
-          .length,
-        assigned: resourceResult.data.filter((resource) => !resource.available)
-          .length,
-      }
-    : {
-        total: 0,
-        available: 0,
-        assigned: 0,
-      };
 
   const projects: ScheduleProjectOption[] = projectResult.ok
     ? projectResult.data
+    : [];
+
+  const resources: ScheduleResource[] = resourceResult.ok
+    ? resourceResult.data
     : [];
 
   return (
@@ -101,7 +96,7 @@ export default async function DailySchedulePage({
         initialSchedules={schedules}
         projects={projects}
         projectError={projectResult.ok ? undefined : projectResult.error.message}
-        resourceSummary={resourceSummary}
+        resources={resources}
         resourceError={resourceResult.ok ? undefined : resourceResult.error.message}
       />
     </div>

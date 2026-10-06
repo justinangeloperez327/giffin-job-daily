@@ -2,7 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 
-import { deleteDailySchedule } from "@/server/services/daily-schedule";
+import {
+  deleteDailySchedule,
+  saveDailySchedule,
+} from "@/server/services/daily-schedule";
+
+export async function saveDailyScheduleAction(input: unknown) {
+  const result = await saveDailySchedule(input);
+
+  if (result.ok) {
+    revalidatePath("/daily-schedule");
+    revalidatePath(
+      `/projects/${encodeURIComponent(result.data.project.jobNo)}`,
+    );
+  }
+
+  return result;
+}
 
 export async function deleteDailyScheduleAction(
   scheduleDate: string,
