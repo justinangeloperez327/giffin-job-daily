@@ -1,15 +1,20 @@
 export {
+  employeeIdSchema,
   labourInputSchema,
+  labourKeySchema,
   type LabourInput,
+  type LabourKey,
 } from "@/lib/validation/labour";
 export {
   labourListQuerySchema,
+  labourSortFieldSchema,
   projectListQuerySchema,
   projectSortFieldSchema,
   resourceAvailabilityQuerySchema,
   scheduleDayQuerySchema,
   sortOrderSchema,
   type LabourListQuery,
+  type LabourSortField,
   type ProjectListQuery,
   type ProjectSortField,
   type ResourceAvailabilityQuery,

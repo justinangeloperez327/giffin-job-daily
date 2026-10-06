@@ -1,6 +1,7 @@
 export {
   countLabours,
   getLabourByEmployeeId,
+  getLabourDetailByEmployeeId,
   listLabourDesignations,
   listLabours,
   type LabourListOptions,

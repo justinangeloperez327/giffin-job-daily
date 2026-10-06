@@ -4,6 +4,7 @@ import {
   type ActionResult,
   validationFailure,
 } from "@/lib/action-result";
+import { labourKeySchema } from "@/lib/validation/labour";
 import { projectKeySchema } from "@/lib/validation/project";
 import {
   labourListQuerySchema,
@@ -15,6 +16,7 @@ import { mapDatabaseError } from "@/server/database/errors";
 import {
   countLabours,
   countProjects,
+  getLabourDetailByEmployeeId,
   getProjectDetailByJobNo,
   listDailySchedulesByDate,
   listLabourDesignations,
@@ -36,6 +38,16 @@ export type ProjectsPageResult = PaginatedResult<
 > & {
   search?: string;
   sort: "projectName" | "jobNo" | "soNo";
+  order: "asc" | "desc";
+};
+
+export type LaboursPageResult = PaginatedResult<
+  Awaited<ReturnType<typeof listLabours>>[number]
+> & {
+  search?: string;
+  designation?: string;
+  designations: string[];
+  sort: "employeeName" | "employeeId" | "designation";
   order: "asc" | "desc";
 };
 
@@ -108,40 +120,68 @@ export async function loadProjectDetail(input: unknown) {
 
 export async function loadLaboursPage(
   input: unknown = {},
-): Promise<
-  ActionResult<{
-    items: Awaited<ReturnType<typeof listLabours>>;
-    total: number;
-    page: number;
-    pageSize: number;
-    pageCount: number;
-    designations: string[];
-  }>
-> {
+): Promise<ActionResult<LaboursPageResult>> {
   const parsed = labourListQuerySchema.safeParse(input);
 
   if (!parsed.success) {
     return validationFailure(parsed.error);
   }
 
-  const { search, designation, page, pageSize } = parsed.data;
-  const skip = (page - 1) * pageSize;
+  const { search, designation, page, pageSize, sort, order } = parsed.data;
 
   try {
-    const [items, total, designations] = await Promise.all([
-      listLabours({ search, designation, skip, take: pageSize }),
+    const [total, designations] = await Promise.all([
       countLabours({ search, designation }),
       listLabourDesignations(),
     ]);
+    const totalPages = pageCount(total, pageSize);
+    const normalizedPage =
+      totalPages === 0 ? 1 : Math.min(page, totalPages);
+    const skip = (normalizedPage - 1) * pageSize;
+    const items = await listLabours({
+      search,
+      designation,
+      skip,
+      take: pageSize,
+      sort,
+      order,
+    });
 
     return actionSuccess({
       items,
       total,
-      page,
+      page: normalizedPage,
       pageSize,
-      pageCount: pageCount(total, pageSize),
+      pageCount: totalPages,
+      search,
+      designation,
       designations,
+      sort,
+      order,
     });
+  } catch (error) {
+    return actionFailure(mapDatabaseError(error));
+  }
+}
+
+export async function loadLabourDetail(input: unknown) {
+  const parsed = labourKeySchema.safeParse(input);
+
+  if (!parsed.success) {
+    return validationFailure(parsed.error);
+  }
+
+  try {
+    const labour = await getLabourDetailByEmployeeId(parsed.data.employeeId);
+
+    if (!labour) {
+      return actionFailure({
+        code: "NOT_FOUND",
+        message: "The requested employee could not be found.",
+      });
+    }
+
+    return actionSuccess(labour);
   } catch (error) {
     return actionFailure(mapDatabaseError(error));
   }

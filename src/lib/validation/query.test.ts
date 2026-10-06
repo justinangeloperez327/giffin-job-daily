@@ -16,6 +16,15 @@ describe("list query validation", () => {
     expect(result.order).toBe("asc");
   });
 
+  it("applies labour list defaults", () => {
+    const result = labourListQuerySchema.parse({});
+
+    expect(result.page).toBe(1);
+    expect(result.pageSize).toBe(25);
+    expect(result.sort).toBe("employeeName");
+    expect(result.order).toBe("asc");
+  });
+
   it("coerces URL-style pagination values", () => {
     const result = labourListQuerySchema.parse({
       page: "3",
@@ -32,9 +41,12 @@ describe("list query validation", () => {
     ).toBe(false);
   });
 
-  it("rejects unsupported project sort fields", () => {
+  it("rejects unsupported sort fields", () => {
     expect(
       projectListQuerySchema.safeParse({ sort: "createdAt" }).success,
+    ).toBe(false);
+    expect(
+      labourListQuerySchema.safeParse({ sort: "mobileNumber" }).success,
     ).toBe(false);
   });
 

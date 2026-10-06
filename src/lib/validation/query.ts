@@ -8,6 +8,9 @@ const pageSizeSchema = z.coerce.number().int().min(1).max(100).default(25);
 export const projectSortFieldSchema = z
   .enum(["projectName", "jobNo", "soNo"])
   .default("projectName");
+export const labourSortFieldSchema = z
+  .enum(["employeeName", "employeeId", "designation"])
+  .default("employeeName");
 export const sortOrderSchema = z.enum(["asc", "desc"]).default("asc");
 
 export const projectListQuerySchema = z.object({
@@ -23,6 +26,8 @@ export const labourListQuerySchema = z.object({
   designation: optionalText(100),
   page: pageSchema,
   pageSize: pageSizeSchema,
+  sort: labourSortFieldSchema,
+  order: sortOrderSchema,
 });
 
 export const scheduleDayQuerySchema = z.object({
@@ -38,6 +43,7 @@ export const resourceAvailabilityQuerySchema = z.object({
 });
 
 export type ProjectSortField = z.infer<typeof projectSortFieldSchema>;
+export type LabourSortField = z.infer<typeof labourSortFieldSchema>;
 export type SortOrder = z.infer<typeof sortOrderSchema>;
 export type ProjectListQuery = z.infer<typeof projectListQuerySchema>;
 export type LabourListQuery = z.infer<typeof labourListQuerySchema>;
