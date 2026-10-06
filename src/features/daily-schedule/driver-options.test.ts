@@ -84,6 +84,23 @@ describe("driver availability", () => {
     expect(current?.available).toBe(true);
   });
 
+  it("keeps the current project's persisted driver available after a local clear", () => {
+    const options = buildDriverOptions({
+      resources,
+      localRows: [],
+      currentRowKey: "saved:JOB-1",
+      projectJobNo: "JOB-1",
+      selectedDriverId: null,
+      currentForemanId: null,
+      currentLabourIds: [],
+      savedRowKey: (jobNo) => `saved:${jobNo}`,
+    });
+
+    const current = options.find((item) => item.employeeId === "D-2");
+    expect(current?.selected).toBe(false);
+    expect(current?.available).toBe(true);
+  });
+
   it("blocks a driver assigned to another project", () => {
     const options = buildDriverOptions({
       resources,
