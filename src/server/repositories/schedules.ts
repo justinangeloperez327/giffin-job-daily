@@ -47,3 +47,32 @@ export async function getDailySchedule(
     include: scheduleInclude,
   });
 }
+
+export async function listDailyScheduleLabours(
+  scheduleDate: string,
+  projectJobNo?: string,
+) {
+  const date = parseScheduleDate(scheduleDate);
+
+  return prisma.dailyScheduleLabour.findMany({
+    where: {
+      scheduleDate: date,
+      ...(projectJobNo ? { projectJobNo } : {}),
+    },
+    include: {
+      labour: true,
+      dailySchedule: {
+        select: {
+          project: true,
+          foreman: true,
+          driver: true,
+        },
+      },
+    },
+    orderBy: {
+      labour: {
+        employeeName: "asc",
+      },
+    },
+  });
+}
