@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, UsersRound } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,11 +43,18 @@ export function ResourcePoolPanel({
   const [availability, setAvailability] = useState<
     "available" | "assigned" | "all"
   >("available");
-  const [stagedLabours, setStagedLabours] = useState<Set<string>>(new Set());
+  const [stagedLabours, setStagedLabours] = useState<{
+    contextKey?: string;
+    employeeIds: Set<string>;
+  }>({
+    contextKey,
+    employeeIds: new Set(),
+  });
 
-  useEffect(() => {
-    setStagedLabours(new Set());
-  }, [contextKey]);
+  const activeStagedLabours =
+    stagedLabours.contextKey === contextKey
+      ? stagedLabours.employeeIds
+      : new Set<string>();
 
   const filteredForemen = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -115,7 +122,10 @@ export function ResourcePoolPanel({
 
   function toggleLabour(employeeId: string) {
     setStagedLabours((current) => {
-      const next = new Set(current);
+      const next =
+        current.contextKey === contextKey
+          ? new Set(current.employeeIds)
+          : new Set<string>();
 
       if (next.has(employeeId)) {
         next.delete(employeeId);
@@ -123,17 +133,23 @@ export function ResourcePoolPanel({
         next.add(employeeId);
       }
 
-      return next;
+      return {
+        contextKey,
+        employeeIds: next,
+      };
     });
   }
 
   function assignStagedLabours() {
-    if (stagedLabours.size === 0) {
+    if (activeStagedLabours.size === 0) {
       return;
     }
 
-    onAssignLabours([...stagedLabours]);
-    setStagedLabours(new Set());
+    onAssignLabours([...activeStagedLabours]);
+    setStagedLabours({
+      contextKey,
+      employeeIds: new Set(),
+    });
   }
 
   return (
@@ -357,7 +373,7 @@ export function ResourcePoolPanel({
             ) : filteredLabours.length > 0 ? (
               <div className="space-y-1">
                 {filteredLabours.map((labour) => {
-                  const staged = stagedLabours.has(labour.employeeId);
+                  const staged = activeStagedLabours.has(labour.employeeId);
                   const selectable = labour.available && !labour.selected;
 
                   return (
@@ -445,11 +461,11 @@ export function ResourcePoolPanel({
             <Button
               type="button"
               className="w-full"
-              disabled={stagedLabours.size === 0 || pending || !selectedLabel}
+              disabled={activeStagedLabours.size === 0 || pending || !selectedLabel}
               onClick={assignStagedLabours}
             >
               Assign{" "}
-              {stagedLabours.size > 0 ? stagedLabours.size : ""} Labour
+              {activeStagedLabours.size > 0 ? activeStagedLabours.size : ""} Labour
             </Button>
           </div>
         </>
