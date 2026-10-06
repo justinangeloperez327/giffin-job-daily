@@ -122,9 +122,7 @@ function ResourcePoolPanel({
           </>
         ) : (
           <>
-            <p className="text-sm font-medium">
-              {tab === "foremen" ? "Select a schedule row" : "Select a schedule row"}
-            </p>
+            <p className="text-sm font-medium">Select a schedule row</p>
             <p className="mt-1 max-w-56 text-xs text-muted-foreground">
               {tab === "foremen"
                 ? "Foreman assignment will use this panel for the selected project."
@@ -189,13 +187,64 @@ export function DailyScheduleBoard({
       return;
     }
 
+    const prompt = "Discard the unsaved schedule row(s) and continue?";
+
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
     };
 
+    const handleInternalNavigation = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const anchor = target.closest("a[href]");
+
+      if (!(anchor instanceof HTMLAnchorElement)) {
+        return;
+      }
+
+      if (anchor.target && anchor.target !== "_self") {
+        return;
+      }
+
+      const destination = new URL(anchor.href, window.location.href);
+
+      if (
+        destination.origin !== window.location.origin ||
+        (destination.pathname === window.location.pathname &&
+          destination.search === window.location.search)
+      ) {
+        return;
+      }
+
+      if (!window.confirm(prompt)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("click", handleInternalNavigation, true);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleInternalNavigation, true);
+    };
   }, [hasUnsavedChanges]);
 
   function confirmDiscardChanges() {
@@ -332,7 +381,14 @@ export function DailyScheduleBoard({
             Add Project
           </Button>
 
-          <Button disabled={!hasUnsavedChanges} title="Complete required schedule fields before saving.">
+          <Button
+            disabled
+            title={
+              hasUnsavedChanges
+                ? "Complete the required project and resource fields before saving."
+                : "No unsaved schedule changes."
+            }
+          >
             <Save className="size-4" />
             Save Schedule
           </Button>
@@ -496,7 +552,7 @@ export function DailyScheduleBoard({
           </div>
         </div>
 
-        <aside className="sticky top-18 hidden h-[calc(100vh-6.5rem)] overflow-hidden rounded-lg border bg-card xl:block">
+        <aside className="sticky top-[4.5rem] hidden h-[calc(100vh-6.5rem)] overflow-hidden rounded-lg border bg-card xl:block">
           <ResourcePoolPanel
             summary={resourceSummary}
             error={resourceError}
