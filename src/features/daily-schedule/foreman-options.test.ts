@@ -47,6 +47,28 @@ describe("foreman availability", () => {
     expect(options("X-1").find((item) => item.employeeId === "X-1")?.selected).toBe(true);
   });
 
+  it("blocks a driver on the current draft", () => {
+    const result = buildForemanOptions({
+      resources,
+      drafts: [{
+        rowKey: "draft-1",
+        projectJobNo: "JOB-1",
+        foremanEmployeeId: null,
+        labourEmployeeIds: [],
+        driverEmployeeId: "F-2",
+      }],
+      projects: [{ jobNo: "JOB-1" }],
+      currentRowKey: "draft-1",
+      projectJobNo: "JOB-1",
+      selectedForemanId: null,
+      savedRowKey: (jobNo) => `saved:${jobNo}`,
+    });
+
+    const blocked = result.find((item) => item.employeeId === "F-2");
+    expect(blocked?.available).toBe(false);
+    expect(blocked?.statusLabel).toBe("Driver on this project");
+  });
+
   it("blocks labour on the current draft", () => {
     const result = buildForemanOptions({
       resources,
