@@ -16,10 +16,10 @@ import {
   countLabours,
   countProjects,
   getProjectDetailByJobNo,
+  listDailySchedulesByDate,
   listLabourDesignations,
   listLabours,
   listProjects,
-  listDailySchedulesByDate,
 } from "@/server/repositories";
 import { getResourceAvailability } from "@/server/services/availability";
 
@@ -53,20 +53,27 @@ export async function loadProjectsPage(
   }
 
   const { search, page, pageSize, sort, order } = parsed.data;
-  const skip = (page - 1) * pageSize;
 
   try {
-    const [items, total] = await Promise.all([
-      listProjects({ search, skip, take: pageSize, sort, order }),
-      countProjects(search),
-    ]);
+    const total = await countProjects(search);
+    const totalPages = pageCount(total, pageSize);
+    const normalizedPage =
+      totalPages === 0 ? 1 : Math.min(page, totalPages);
+    const skip = (normalizedPage - 1) * pageSize;
+    const items = await listProjects({
+      search,
+      skip,
+      take: pageSize,
+      sort,
+      order,
+    });
 
     return actionSuccess({
       items,
       total,
-      page,
+      page: normalizedPage,
       pageSize,
-      pageCount: pageCount(total, pageSize),
+      pageCount: totalPages,
       search,
       sort,
       order,
