@@ -6,7 +6,7 @@ Daily project and labour scheduling application built with Next.js, TypeScript, 
 
 - Next.js 16.3.8
 - React 19.3.0
-- TypeScript 7.0.0
+- TypeScript 7.0.2
 - shadcn 4.21.1
 - Tailwind CSS 4.3.3
 - Prisma ORM 7.10.0
@@ -233,6 +233,29 @@ Current unit coverage includes:
 - driver availability and same-day assignment conflicts
 - driver conflicts with draft foreman and labour selections
 
+## Production readiness
+
+The application includes:
+
+- live operational dashboard backed by the current schedule date
+- explicit dynamic rendering for database-backed pages
+- `/api/health` database readiness endpoint
+- standalone Next.js production output
+- removal of the `X-Powered-By` response header
+- baseline content-type, framing, referrer, and browser-permission headers
+- explicit `DATABASE_URL` startup validation
+- GitHub Actions CI with PostgreSQL 18
+- Prisma schema validation and migration deployment in CI
+- lint, TypeScript, unit-test, and production-build gates
+
+Run the full local quality gate with:
+
+```bash
+npm run check
+```
+
+The health endpoint returns `200` with `{"status":"ok"}` when PostgreSQL is reachable and `503` with `{"status":"unavailable"}` when database readiness fails. It does not expose database error details.
+
 ## Local setup
 
 1. Copy `.env.example` to `.env`.
@@ -271,6 +294,6 @@ Current unit coverage includes:
 
 ## Prisma
 
-Prisma 7.10 uses `prisma7.config.ts` for datasource configuration and generates the client into `src/generated/prisma`.
+Prisma 7.10+ uses `prisma7.config.ts` for Prisma 7 configuration and generates the client into `src/generated/prisma`. This filename is intentional for Prisma 7.10+ compatibility with the newer Prisma 8 config format.
 
 The schedule model is intentionally extensible so additional daily operational fields can be added without restructuring project and labour relationships.
