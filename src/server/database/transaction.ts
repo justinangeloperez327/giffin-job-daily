@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { isRetryableTransactionError } from "@/server/database/errors";
 
 const MAX_TRANSACTION_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 25;
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
 
 export async function withSerializableTransaction<T>(
   operation: (transaction: Prisma.TransactionClient) => Promise<T>,
@@ -23,6 +28,8 @@ export async function withSerializableTransaction<T>(
       ) {
         throw error;
       }
+
+      await delay(RETRY_DELAY_MS * attempt);
     }
   }
 
