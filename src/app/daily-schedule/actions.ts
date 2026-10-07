@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { authorizeAction } from "@/server/auth/session";
 import {
   deleteDailySchedule,
   moveLabourAssignment,
@@ -16,12 +17,18 @@ function revalidateScheduleProjects(...jobNos: string[]) {
 }
 
 export async function saveDailyScheduleAction(input: unknown) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await saveDailySchedule(input);
   if (result.ok) revalidateScheduleProjects(result.data.project.jobNo);
   return result;
 }
 
 export async function moveLabourAssignmentAction(input: unknown) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await moveLabourAssignment(input);
   if (result.ok) {
     revalidateScheduleProjects(result.data.fromProjectJobNo, result.data.toProjectJobNo);
@@ -30,6 +37,9 @@ export async function moveLabourAssignmentAction(input: unknown) {
 }
 
 export async function deleteDailyScheduleAction(scheduleDate: string, projectJobNo: string) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await deleteDailySchedule(scheduleDate, projectJobNo);
   if (result.ok) revalidateScheduleProjects(projectJobNo);
   return result;
