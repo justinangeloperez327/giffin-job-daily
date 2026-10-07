@@ -233,10 +233,57 @@ Current unit coverage includes:
 - driver availability and same-day assignment conflicts
 - driver conflicts with draft foreman and labour selections
 
+## Authentication and user management
+
+The application uses internal accounts. Public registration is intentionally disabled.
+
+### Roles
+
+- **ADMIN** — full operational access plus user management.
+- **PLANNER** — can manage projects, labour records, and daily schedules.
+- **VIEWER** — read-only access to the dashboard, projects, labours, and daily schedules.
+
+All write actions enforce roles on the server. The UI also removes operational write controls for Viewer accounts. User management routes require an Administrator session.
+
+### Sessions and password security
+
+- Passwords are hashed with Node.js `scrypt` using a per-password random salt.
+- Session tokens are random 256-bit values.
+- Only a SHA-256 hash of each session token is stored in PostgreSQL.
+- Session cookies are HttpOnly, SameSite=Lax, and Secure in production.
+- Sessions expire after seven days.
+- Five failed sign-in attempts lock the account for 15 minutes.
+- Resetting a password revokes all existing sessions for that user.
+- Deactivating a user revokes that user's existing sessions.
+- The application prevents deactivating your own account and prevents removing the final active Administrator.
+
+Next.js `proxy.ts` performs only an optimistic cookie-presence redirect. The protected application layout validates the database session, and every Server Action performs its own authorization check.
+
+### Create the first Administrator
+
+Apply the database migrations first, then bootstrap the first Administrator from a trusted machine connected to the target database.
+
+PowerShell example:
+
+```powershell
+$env:DATABASE_URL="<production-postgres-url>"
+$env:ADMIN_NAME="Justin Perez"
+$env:ADMIN_EMAIL="you@example.com"
+$env:ADMIN_PASSWORD="<strong-password-at-least-12-characters>"
+npm run user:create-admin
+```
+
+The bootstrap command only works while the `users` table is empty. After the first Administrator signs in, create all additional accounts from **Users → Add User**.
+
+Do not commit administrator credentials to `.env.example`, source control, or deployment configuration.
+
 ## Production readiness
 
 The application includes:
 
+- internal login and database-backed session authentication
+- role-based access control for Administrator, Planner, and Viewer
+- administrator-only user management
 - live operational dashboard backed by the current schedule date
 - explicit dynamic rendering for database-backed pages
 - `/api/health` database readiness endpoint
