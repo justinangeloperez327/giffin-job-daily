@@ -68,5 +68,9 @@ jobs:
       - name: Verify Vercel production build
         env:
           NODE_ENV: production
+          VERCEL: "1"
           VERCEL_ENV: production
+          ADMIN_NAME: CI Administrator
+          ADMIN_EMAIL: ci-admin@example.com
+          ADMIN_PASSWORD: ci-only-admin-password
         run: npm run vercel-build
