@@ -50,14 +50,6 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is required.");
 }
 
-const name = required("name", "ADMIN_NAME").trim();
-const email = required("email", "ADMIN_EMAIL").trim().toLowerCase();
-const password = required("password", "ADMIN_PASSWORD");
-
-if (password.length < 12 || password.length > 128) {
-  throw new Error("Admin password must be between 12 and 128 characters.");
-}
-
 const client = new Client({ connectionString });
 
 try {
@@ -68,20 +60,26 @@ try {
   );
 
   if (countResult.rows[0].count > 0) {
-    throw new Error(
-      "Users already exist. Create additional accounts from the Users page.",
-    );
-  }
+    console.log("Administrator bootstrap skipped: users already exist.");
+  } else {
+    const name = required("name", "ADMIN_NAME").trim();
+    const email = required("email", "ADMIN_EMAIL").trim().toLowerCase();
+    const password = required("password", "ADMIN_PASSWORD");
 
-  await client.query(
+    if (password.length < 12 || password.length > 128) {
+      throw new Error("Admin password must be between 12 and 128 characters.");
+    }
+
+    await client.query(
     `INSERT INTO "users"
       ("id", "name", "email", "password_hash", "role", "is_active",
        "failed_login_attempts", "created_at", "updated_at")
      VALUES ($1, $2, $3, $4, 'ADMIN', true, 0, NOW(), NOW())`,
-    [randomUUID(), name, email, hashPassword(password)],
-  );
+      [randomUUID(), name, email, hashPassword(password)],
+    );
 
-  console.log(`Created administrator: ${email}`);
+    console.log(`Created administrator: ${email}`);
+  }
 } finally {
   await client.end();
 }
