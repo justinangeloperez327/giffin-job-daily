@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { authorizeAction } from "@/server/auth/session";
 import {
   createLabour,
   deleteLabour,
@@ -22,6 +23,9 @@ function labourDetailPath(employeeId: string) {
 }
 
 export async function createLabourAction(formData: FormData) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await createLabour(labourInputFromForm(formData));
 
   if (result.ok) {
@@ -35,6 +39,9 @@ export async function updateLabourAction(
   originalEmployeeId: string,
   formData: FormData,
 ) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await updateLabour(
     originalEmployeeId,
     labourInputFromForm(formData),
@@ -51,6 +58,9 @@ export async function updateLabourAction(
 }
 
 export async function deleteLabourAction(employeeId: string) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await deleteLabour(employeeId);
 
   if (result.ok) {
