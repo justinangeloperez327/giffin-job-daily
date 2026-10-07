@@ -6,6 +6,8 @@ const migratePreview =
   process.env.VERCEL_MIGRATE_PREVIEW === "1";
 const shouldMigrate =
   vercelEnvironment === "production" || migratePreview;
+const shouldBootstrapAdmin =
+  vercelEnvironment === "production" && process.env.VERCEL === "1";
 
 function run(command, args) {
   const executable =
@@ -31,6 +33,10 @@ console.log(
 
 if (shouldMigrate) {
   run("npx", ["prisma", "migrate", "deploy"]);
+}
+
+if (shouldBootstrapAdmin) {
+  run("node", ["scripts/create-admin.mjs"]);
 }
 
 run("npx", ["prisma", "generate"]);
