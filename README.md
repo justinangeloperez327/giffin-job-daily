@@ -325,7 +325,7 @@ The repository is configured for Vercel + Prisma Postgres.
 
 5. Deploy the `main` branch.
 
-The repository pins Node.js to `22.x` so Vercel uses the same major runtime as CI rather than its newer default Node.js runtime.
+The repository pins Node.js to `24.x` so Vercel, CI, and local development use the current Vercel-supported LTS major.
 
 ### Prisma generation and migrations
 
