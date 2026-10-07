@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { authorizeAction } from "@/server/auth/session";
 import {
   createProject,
   deleteProject,
@@ -21,6 +22,9 @@ function projectDetailPath(jobNo: string) {
 }
 
 export async function createProjectAction(formData: FormData) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await createProject(projectInputFromForm(formData));
 
   if (result.ok) {
@@ -34,6 +38,9 @@ export async function updateProjectAction(
   originalJobNo: string,
   formData: FormData,
 ) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await updateProject(
     originalJobNo,
     projectInputFromForm(formData),
@@ -49,6 +56,9 @@ export async function updateProjectAction(
 }
 
 export async function deleteProjectAction(jobNo: string) {
+  const auth = await authorizeAction(["ADMIN", "PLANNER"]);
+  if (!auth.ok) return auth;
+
   const result = await deleteProject(jobNo);
 
   if (result.ok) {
