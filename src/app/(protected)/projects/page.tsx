@@ -14,8 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { canManageOperations } from "@/lib/auth/constants";
 import { cn } from "@/lib/utils";
 import type { ProjectSortField, SortOrder } from "@/lib/validation/query";
+import { requirePageUser } from "@/server/auth/session";
 import { loadProjectsPage } from "@/server/services/read-models";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -106,7 +108,11 @@ export default async function ProjectsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const rawSearchParams = await searchParams;
+  const [rawSearchParams, user] = await Promise.all([
+    searchParams,
+    requirePageUser(),
+  ]);
+  const canManage = canManageOperations(user.role);
   const result = await loadProjectsPage(rawSearchParams);
 
   if (!result.ok) {
@@ -115,7 +121,7 @@ export default async function ProjectsPage({
         <PageHeader
           title="Projects"
           description="Manage project, job number, and sales order information."
-          actions={<CreateProjectButton />}
+          actions={canManage ? <CreateProjectButton /> : undefined}
         />
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {result.error.message}
@@ -132,7 +138,7 @@ export default async function ProjectsPage({
       <PageHeader
         title="Projects"
         description="Manage project, job number, and sales order information."
-        actions={<CreateProjectButton />}
+        actions={canManage ? <CreateProjectButton /> : undefined}
       />
 
       <div className="space-y-3">
@@ -210,9 +216,11 @@ export default async function ProjectsPage({
                   />
                 </TableHead>
                 <TableHead className="w-28 text-right">Schedules</TableHead>
-                <TableHead className="w-12">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
+                {canManage ? (
+                  <TableHead className="w-12">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                ) : null}
               </TableRow>
             </TableHeader>
 
@@ -233,21 +241,23 @@ export default async function ProjectsPage({
                     <TableCell className="text-right tabular-nums text-muted-foreground">
                       {project._count.dailySchedules}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <ProjectActions
-                        project={{
-                          projectName: project.projectName,
-                          jobNo: project.jobNo,
-                          soNo: project.soNo,
-                          scheduleCount: project._count.dailySchedules,
-                        }}
-                      />
-                    </TableCell>
+                    {canManage ? (
+                      <TableCell className="text-right">
+                        <ProjectActions
+                          project={{
+                            projectName: project.projectName,
+                            jobNo: project.jobNo,
+                            soNo: project.soNo,
+                            scheduleCount: project._count.dailySchedules,
+                          }}
+                        />
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))
               ) : (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="h-40 text-center">
+                  <TableCell colSpan={canManage ? 5 : 4} className="h-40 text-center">
                     <p className="text-sm font-medium">
                       {data.search ? "No projects found" : "No projects yet"}
                     </p>
