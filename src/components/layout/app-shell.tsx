@@ -1,17 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   HardHat,
   LayoutDashboard,
+  LogOut,
   Menu,
+  UserRoundCog,
   UsersRound,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
+import { logoutAction } from "@/app/login/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetClose,
@@ -20,9 +30,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import type { UserRoleValue } from "@/lib/auth/constants";
 import { cn } from "@/lib/utils";
 
-const navigation = [
+type ShellUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRoleValue;
+};
+
+const baseNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Daily Schedule", href: "/daily-schedule", icon: CalendarDays },
   { name: "Projects", href: "/projects", icon: HardHat },
@@ -31,11 +49,21 @@ const navigation = [
 
 function Navigation({
   pathname,
+  role,
   mobile = false,
 }: {
   pathname: string;
+  role: UserRoleValue;
   mobile?: boolean;
 }) {
+  const navigation =
+    role === "ADMIN"
+      ? [
+          ...baseNavigation,
+          { name: "Users", href: "/users", icon: UserRoundCog },
+        ]
+      : baseNavigation;
+
   return (
     <nav className="space-y-1" aria-label="Primary navigation">
       {navigation.map((item) => {
@@ -73,7 +101,21 @@ function Navigation({
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+function roleLabel(role: UserRoleValue) {
+  return role === "ADMIN"
+    ? "Administrator"
+    : role === "PLANNER"
+      ? "Planner"
+      : "Viewer";
+}
+
+export function AppShell({
+  children,
+  currentUser,
+}: {
+  children: React.ReactNode;
+  currentUser: ShellUser;
+}) {
   const pathname = usePathname();
 
   return (
@@ -91,12 +133,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-3">
-          <Navigation pathname={pathname} />
+          <Navigation pathname={pathname} role={currentUser.role} />
         </div>
 
         <div className="border-t p-3">
-          <p className="px-3 text-xs text-muted-foreground">
-            Daily operations workspace
+          <p className="truncate px-3 text-xs font-medium">{currentUser.name}</p>
+          <p className="truncate px-3 text-xs text-muted-foreground">
+            {roleLabel(currentUser.role)}
           </p>
         </div>
       </aside>
@@ -118,7 +161,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </p>
                 </SheetHeader>
                 <div className="p-3">
-                  <Navigation pathname={pathname} mobile />
+                  <Navigation
+                    pathname={pathname}
+                    role={currentUser.role}
+                    mobile
+                  />
                 </div>
               </SheetContent>
             </Sheet>
@@ -132,7 +179,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Daily operations workspace
           </div>
 
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-9 max-w-52 px-2.5">
+                  <span className="truncate">{currentUser.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <div className="px-2 py-1.5">
+                  <p className="truncate text-sm font-medium">
+                    {currentUser.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {currentUser.email}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {roleLabel(currentUser.role)}
+                  </p>
+                </div>
+                <DropdownMenuSeparator />
+                <form action={logoutAction}>
+                  <DropdownMenuItem asChild>
+                    <button type="submit" className="w-full">
+                      <LogOut className="size-4" />
+                      Sign out
+                    </button>
+                  </DropdownMenuItem>
+                </form>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-[1600px] px-4 py-5 md:px-6 md:py-6">
