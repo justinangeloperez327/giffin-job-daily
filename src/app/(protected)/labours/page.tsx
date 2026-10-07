@@ -15,8 +15,10 @@ import {
 } from "@/components/ui/table";
 import { CreateLabourButton } from "@/features/labours/create-labour-button";
 import { LabourActions } from "@/features/labours/labour-actions";
+import { canManageOperations } from "@/lib/auth/constants";
 import { cn } from "@/lib/utils";
 import type { LabourSortField, SortOrder } from "@/lib/validation/query";
+import { requirePageUser } from "@/server/auth/session";
 import { loadLaboursPage } from "@/server/services/read-models";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -116,7 +118,11 @@ export default async function LaboursPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const rawSearchParams = await searchParams;
+  const [rawSearchParams, user] = await Promise.all([
+    searchParams,
+    requirePageUser(),
+  ]);
+  const canManage = canManageOperations(user.role);
   const result = await loadLaboursPage(rawSearchParams);
 
   if (!result.ok) {
@@ -125,7 +131,7 @@ export default async function LaboursPage({
         <PageHeader
           title="Labours"
           description="Manage employees and designations used by daily schedules."
-          actions={<CreateLabourButton />}
+          actions={canManage ? <CreateLabourButton /> : undefined}
         />
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {result.error.message}
@@ -142,7 +148,7 @@ export default async function LaboursPage({
       <PageHeader
         title="Labours"
         description="Manage employees and designations used by daily schedules."
-        actions={<CreateLabourButton />}
+        actions={canManage ? <CreateLabourButton /> : undefined}
       />
 
       <div className="space-y-3">
@@ -241,9 +247,11 @@ export default async function LaboursPage({
                 </TableHead>
                 <TableHead>Mobile</TableHead>
                 <TableHead className="w-24 text-right">Usage</TableHead>
-                <TableHead className="w-12">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
+                {canManage ? (
+                  <TableHead className="w-12">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                ) : null}
               </TableRow>
             </TableHeader>
 
@@ -273,23 +281,25 @@ export default async function LaboursPage({
                       <TableCell className="text-right tabular-nums text-muted-foreground">
                         {usageCount}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <LabourActions
-                          labour={{
-                            employeeId: labour.employeeId,
-                            employeeName: labour.employeeName,
-                            designation: labour.designation,
-                            mobileNumber: labour.mobileNumber,
-                            usageCount,
-                          }}
-                        />
-                      </TableCell>
+                      {canManage ? (
+                        <TableCell className="text-right">
+                          <LabourActions
+                            labour={{
+                              employeeId: labour.employeeId,
+                              employeeName: labour.employeeName,
+                              designation: labour.designation,
+                              mobileNumber: labour.mobileNumber,
+                              usageCount,
+                            }}
+                          />
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={6} className="h-40 text-center">
+                  <TableCell colSpan={canManage ? 6 : 5} className="h-40 text-center">
                     <p className="text-sm font-medium">
                       {data.search || data.designation
                         ? "No employees found"
