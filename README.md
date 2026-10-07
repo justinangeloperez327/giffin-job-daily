@@ -273,7 +273,9 @@ $env:ADMIN_PASSWORD="<strong-password-at-least-12-characters>"
 npm run user:create-admin
 ```
 
-The bootstrap command only works while the `users` table is empty. After the first Administrator signs in, create all additional accounts from **Users → Add User**.
+The bootstrap is idempotent: when the `users` table is empty, a Vercel production build creates the first Administrator from `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`. Once any user exists, later deployments skip the bootstrap without changing credentials.
+
+After the first Administrator signs in, create all additional accounts from **Users → Add User**. You can then remove `ADMIN_PASSWORD` from Vercel if you do not want the bootstrap secret retained; existing database users are unaffected.
 
 Do not commit administrator credentials to `.env.example`, source control, or deployment configuration.
 
