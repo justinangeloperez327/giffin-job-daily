@@ -6,6 +6,8 @@ export type AppErrorCode =
   | "CONFLICT"
   | "INVALID_REFERENCE"
   | "DATABASE"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
   | "UNKNOWN";
 
 export type FieldErrors = Record<string, string[]>;

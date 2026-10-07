@@ -17,7 +17,8 @@
     "check": "npm run db:validate && npm run lint && npm run typecheck && npm test",
     "db:validate": "prisma validate",
     "postinstall": "prisma generate",
-    "vercel-build": "node scripts/vercel-build.mjs"
+    "vercel-build": "node scripts/vercel-build.mjs",
+    "user:create-admin": "node scripts/create-admin.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
