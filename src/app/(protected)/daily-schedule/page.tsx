@@ -5,11 +5,13 @@ import {
   type ScheduleResource,
 } from "@/features/daily-schedule/daily-schedule-board";
 import type { ScheduleProjectOption } from "@/features/daily-schedule/project-selector";
+import { ReadOnlyScheduleBoard } from "@/features/daily-schedule/read-only-schedule-board";
 import {
   formatTimeValue,
   getScheduleDateInTimeZone,
 } from "@/lib/date-time";
 import { scheduleDateSchema } from "@/lib/validation/common";
+import { requirePageUser } from "@/server/auth/session";
 import {
   loadProjectOptions,
   loadResourcePool,
@@ -29,6 +31,7 @@ export default async function DailySchedulePage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const user = await requirePageUser();
   const timeZone = process.env.APP_TIME_ZONE ?? "Asia/Dubai";
   const today = getScheduleDateInTimeZone(new Date(), timeZone);
   const rawSearchParams = await searchParams;
@@ -92,15 +95,24 @@ export default async function DailySchedulePage({
         description="Plan daily project resources, timing, targets, and logistics."
       />
 
-      <DailyScheduleBoard
-        selectedDate={selectedDate}
-        today={today}
-        initialSchedules={schedules}
-        projects={projects}
-        projectError={projectResult.ok ? undefined : projectResult.error.message}
-        resources={resources}
-        resourceError={resourceResult.ok ? undefined : resourceResult.error.message}
-      />
+      {user.role === "VIEWER" ? (
+        <ReadOnlyScheduleBoard
+          selectedDate={selectedDate}
+          today={today}
+          schedules={schedules}
+          resources={resources}
+        />
+      ) : (
+        <DailyScheduleBoard
+          selectedDate={selectedDate}
+          today={today}
+          initialSchedules={schedules}
+          projects={projects}
+          projectError={projectResult.ok ? undefined : projectResult.error.message}
+          resources={resources}
+          resourceError={resourceResult.ok ? undefined : resourceResult.error.message}
+        />
+      )}
     </div>
   );
 }
