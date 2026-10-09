@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { CreateLabourButton } from "@/features/labours/create-labour-button";
 import { LabourActions } from "@/features/labours/labour-actions";
+import { ExcelImportButton } from "@/features/import/excel-import-button";
 import { canManageOperations } from "@/lib/auth/constants";
 import { cn } from "@/lib/utils";
 import type { LabourSortField, SortOrder } from "@/lib/validation/query";
@@ -131,7 +132,14 @@ export default async function LaboursPage({
         <PageHeader
           title="Labours"
           description="Manage employees and designations used by daily schedules."
-          actions={canManage ? <CreateLabourButton /> : undefined}
+          actions={
+            canManage ? (
+              <>
+                <ExcelImportButton kind="labours" />
+                <CreateLabourButton />
+              </>
+            ) : undefined
+          }
         />
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {result.error.message}
@@ -148,7 +156,14 @@ export default async function LaboursPage({
       <PageHeader
         title="Labours"
         description="Manage employees and designations used by daily schedules."
-        actions={canManage ? <CreateLabourButton /> : undefined}
+        actions={
+            canManage ? (
+              <>
+                <ExcelImportButton kind="labours" />
+                <CreateLabourButton />
+              </>
+            ) : undefined
+          }
       />
 
       <div className="space-y-3">
