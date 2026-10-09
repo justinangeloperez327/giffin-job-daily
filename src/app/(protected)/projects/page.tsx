@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { CreateProjectButton } from "@/features/projects/create-project-button";
 import { ProjectActions } from "@/features/projects/project-actions";
+import { ExcelImportButton } from "@/features/import/excel-import-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,7 +122,14 @@ export default async function ProjectsPage({
         <PageHeader
           title="Projects"
           description="Manage project, job number, and sales order information."
-          actions={canManage ? <CreateProjectButton /> : undefined}
+          actions={
+            canManage ? (
+              <>
+                <ExcelImportButton kind="projects" />
+                <CreateProjectButton />
+              </>
+            ) : undefined
+          }
         />
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {result.error.message}
@@ -138,7 +146,14 @@ export default async function ProjectsPage({
       <PageHeader
         title="Projects"
         description="Manage project, job number, and sales order information."
-        actions={canManage ? <CreateProjectButton /> : undefined}
+        actions={
+            canManage ? (
+              <>
+                <ExcelImportButton kind="projects" />
+                <CreateProjectButton />
+              </>
+            ) : undefined
+          }
       />
 
       <div className="space-y-3">
