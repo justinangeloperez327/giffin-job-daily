@@ -111,6 +111,7 @@ The Projects module provides:
 - project detail view
 - recent schedule history
 - schedule counts for operational visibility
+- Excel `.xlsx` bulk import for the project master list
 
 Changing a job number updates related schedule references through the configured database cascade.
 
@@ -127,6 +128,7 @@ The Labours module provides:
 - employee detail view
 - separate foreman, labour, and driver assignment history
 - assignment usage counts
+- Excel `.xlsx` bulk import for the labour master list
 
 Changing an employee ID updates related schedule references through the configured database cascade.
 
@@ -174,6 +176,26 @@ Logistics is intentionally expandable below the five-column planning row rather 
 Existing saved-row timing, Daily Target, Driver, and Equipment / Vehicle edits remain local until **Save Schedule** is pressed, and they participate in the same unsaved-change protection as new draft rows.
 
 Foreman and labour resource changes on already-saved rows are persisted immediately through the existing transaction-safe server actions. Dirty timing/target/logistics edits on the same row are preserved across same-day refreshes until explicitly saved or discarded.
+
+### Excel master-data import
+
+Administrators and Planners can bulk import master data from the Projects and Labours pages.
+
+Project workbooks use the first worksheet and require:
+
+```text
+Project Name | Job No | SO No
+```
+
+Labour workbooks require:
+
+```text
+Employee ID | Employee Name | Designation | Mobile Number
+```
+
+`Mobile Number` is optional. Common case, spacing, and underscore variations are accepted for headers. The header row may appear within the first 20 rows.
+
+Imports accept `.xlsx` files up to 5 MB and 2,000 data rows. The full workbook is validated before any write occurs. Duplicate Employee IDs or Job Nos inside the workbook stop the import. Once validation passes, matching Employee IDs or Job Nos are updated and new records are created in one transaction.
 
 ## Shared data layer
 
