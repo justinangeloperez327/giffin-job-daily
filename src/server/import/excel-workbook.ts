@@ -142,7 +142,10 @@ export async function parseExcelWorkbook<Key extends string>(
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    await workbook.xlsx.load(buffer);
+    const loadInput = buffer as unknown as Parameters<
+      typeof workbook.xlsx.load
+    >[0];
+    await workbook.xlsx.load(loadInput);
   } catch {
     throw new WorkbookImportError(
       "The selected file could not be read as an Excel workbook.",
@@ -210,7 +213,9 @@ export async function parseExcelWorkbook<Key extends string>(
         : "";
     }
 
-    const hasData = Object.values(values).some((value) => value.length > 0);
+    const hasData = columns.some(
+      (column) => values[column.key].length > 0,
+    );
 
     if (!hasData) {
       continue;
