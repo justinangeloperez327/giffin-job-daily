@@ -2,12 +2,10 @@
 
 import {
   CalendarDays,
-  Truck,
   ChevronLeft,
   ChevronRight,
   Plus,
   Save,
-  Trash2,
   UsersRound,
   X,
 } from "lucide-react";
@@ -61,6 +59,7 @@ import {
   type ScheduleProjectOption,
 } from "@/features/daily-schedule/project-selector";
 import { ResourcePoolPanel } from "@/features/daily-schedule/resource-pool";
+import { ScheduleRowActions } from "@/features/daily-schedule/schedule-row-actions";
 import { shiftScheduleDate } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 
@@ -1362,42 +1361,19 @@ export function DailyScheduleBoard({
                               />
                             </td>
                             <td className="px-1 py-2" onClick={(event) => event.stopPropagation()}>
-                              <div className="flex flex-col items-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className={cn("size-8 text-muted-foreground hover:text-foreground", (selectedDriver || editableFields.equipmentVehicle) && "text-primary")}
-                                  aria-expanded={logisticsExpanded}
-                                  aria-label={logisticsExpanded ? "Hide project logistics" : "Edit project logistics"}
-                                  title="Show or hide logistics details"
-                                  onClick={() => {
-                                    setSelectedRowKey(rowKey);
-                                    toggleLogistics(rowKey);
-                                  }}
-                                >
-                                  <Truck className="size-4" />
-                                </Button>
-                                <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-muted-foreground hover:text-destructive"
-                                disabled={
-                                  pending &&
-                                  deletingJobNo === row.projectJobNo
-                                }
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  removeSavedSchedule(
-                                    row.projectJobNo,
-                                    row.projectName,
-                                  );
+                              <ScheduleRowActions
+                                logisticsExpanded={logisticsExpanded}
+                                hasLogistics={Boolean(selectedDriver || editableFields.equipmentVehicle)}
+                                onToggleLogistics={() => {
+                                  setSelectedRowKey(rowKey);
+                                  toggleLogistics(rowKey);
                                 }}
-                                aria-label={`Remove ${row.projectName} from schedule`}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                              </div>
+                                onRemove={() => {
+                                  removeSavedSchedule(row.projectJobNo, row.projectName);
+                                }}
+                                removeDisabled={pending && deletingJobNo === row.projectJobNo}
+                                removeLabel={`Remove ${row.projectName} from schedule`}
+                              />
                             </td>
                           </tr>
 
@@ -1585,36 +1561,19 @@ export function DailyScheduleBoard({
                               />
                             </td>
                             <td className="px-1 py-2" onClick={(event) => event.stopPropagation()}>
-                              <div className="flex flex-col items-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className={cn("size-8 text-muted-foreground hover:text-foreground", (selectedDriver || row.equipmentVehicle) && "text-primary")}
-                                  aria-expanded={logisticsExpanded}
-                                  aria-label={logisticsExpanded ? "Hide project logistics" : "Edit project logistics"}
-                                  title="Show or hide logistics details"
-                                  onClick={() => {
-                                    setSelectedRowKey(row.id);
-                                    toggleLogistics(row.id);
-                                  }}
-                                >
-                                  <Truck className="size-4" />
-                                </Button>
-                                <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-muted-foreground hover:text-destructive"
-                                disabled={pending}
-                                onClick={(event) => {
-                                  event.stopPropagation();
+                              <ScheduleRowActions
+                                logisticsExpanded={logisticsExpanded}
+                                hasLogistics={Boolean(selectedDriver || row.equipmentVehicle)}
+                                onToggleLogistics={() => {
+                                  setSelectedRowKey(row.id);
+                                  toggleLogistics(row.id);
+                                }}
+                                onRemove={() => {
                                   removeDraftRow(row.id);
                                 }}
-                                aria-label="Remove draft schedule row"
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                              </div>
+                                removeDisabled={pending}
+                                removeLabel={"Remove draft schedule row"}
+                              />
                             </td>
                           </tr>
 
