@@ -996,7 +996,7 @@ export function DailyScheduleBoard({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2 border bg-card p-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
@@ -1105,21 +1105,21 @@ export function DailyScheduleBoard({
       </div>
 
       {projectError ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <div className="border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-sm text-destructive">
           Projects could not be loaded: {projectError}
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 overflow-hidden rounded-lg border bg-card">
+      <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0 overflow-hidden border bg-card">
           <div className="overflow-x-auto">
-            <div className="min-w-[980px]">
-              <div className="grid grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr] border-b bg-muted/30">
-                {["Project", "Foreman", "Labours", "Timing", "Daily Target"].map(
+            <div className="min-w-[1180px]">
+              <div className="grid grid-cols-[1.3fr_1fr_1.1fr_0.58fr_0.58fr_0.58fr_1.35fr] border-b bg-muted/30">
+                {["Project", "Foreman", "Labours", "Camp", "Start", "End", "Daily Target"].map(
                   (heading) => (
                     <div
                       key={heading}
-                      className="px-3 py-2.5 text-xs font-medium text-muted-foreground"
+                      className="px-2 py-2 text-xs font-medium text-muted-foreground"
                     >
                       {heading}
                     </div>
@@ -1188,9 +1188,9 @@ export function DailyScheduleBoard({
                       >
                         <div
                           onClick={() => setSelectedRowKey(rowKey)}
-                          className="grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr]"
+                          className="grid min-h-24 cursor-pointer grid-cols-[1.3fr_1fr_1.1fr_0.58fr_0.58fr_0.58fr_1.35fr]"
                         >
-                        <div className="relative px-3 py-3 pr-10">
+                        <div className="relative px-2 py-2 pr-9">
                           <button
                             type="button"
                             className="block w-full rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1210,7 +1210,7 @@ export function DailyScheduleBoard({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
+                            className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
                             disabled={
                               pending && deletingJobNo === row.projectJobNo
                             }
@@ -1228,7 +1228,7 @@ export function DailyScheduleBoard({
                         </div>
 
                         <div
-                          className="px-3 py-3"
+                          className="px-2 py-2"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <ForemanSelector
@@ -1241,7 +1241,7 @@ export function DailyScheduleBoard({
                           />
                         </div>
 
-                        <div className="px-3 py-3">
+                        <div className="px-2 py-2">
                           <LabourCell
                             employeeIds={row.labourEmployeeIds}
                             resources={resources}
@@ -1253,7 +1253,7 @@ export function DailyScheduleBoard({
                         </div>
 
                         <div
-                          className="px-3 py-3"
+                          className="col-span-3 px-2 py-2"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <TimingEditor
@@ -1267,7 +1267,7 @@ export function DailyScheduleBoard({
                         </div>
 
                         <div
-                          className="px-3 py-3"
+                          className="px-2 py-2"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <DailyTargetEditor
@@ -1288,7 +1288,7 @@ export function DailyScheduleBoard({
                               setSelectedRowKey(rowKey);
                               toggleLogistics(rowKey);
                             }}
-                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-muted/40"
+                            className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
                           >
                             <span className="flex items-center gap-2 font-medium">
                               Logistics
@@ -1315,7 +1315,7 @@ export function DailyScheduleBoard({
 
                           {logisticsExpanded ? (
                             <div
-                              className="border-t bg-muted/10 px-3 py-3"
+                              className="border-t bg-muted/10 px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <LogisticsEditor
@@ -1377,10 +1377,10 @@ export function DailyScheduleBoard({
                       >
                         <div
                           onClick={() => setSelectedRowKey(row.id)}
-                          className="grid min-h-28 cursor-pointer grid-cols-[1.25fr_1fr_1.2fr_0.85fr_1.5fr]"
+                          className="grid min-h-24 cursor-pointer grid-cols-[1.3fr_1fr_1.1fr_0.58fr_0.58fr_0.58fr_1.35fr]"
                         >
                         <div
-                          className="relative px-3 py-3 pr-10"
+                          className="relative px-2 py-2 pr-9"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <ProjectSelector
@@ -1396,7 +1396,7 @@ export function DailyScheduleBoard({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute right-1 top-1 size-8 text-muted-foreground hover:text-destructive"
+                            className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
                             disabled={pending}
                             onClick={(event) => {
                               event.stopPropagation();
@@ -1409,7 +1409,7 @@ export function DailyScheduleBoard({
                         </div>
 
                         <div
-                          className="px-3 py-3"
+                          className="px-2 py-2"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <ForemanSelector
@@ -1422,7 +1422,7 @@ export function DailyScheduleBoard({
                           />
                         </div>
 
-                        <div className="px-3 py-3">
+                        <div className="px-2 py-2">
                           <LabourCell
                             employeeIds={row.labourEmployeeIds}
                             resources={resources}
@@ -1434,7 +1434,7 @@ export function DailyScheduleBoard({
                         </div>
 
                         <div
-                          className="px-3 py-3"
+                          className="col-span-3 px-2 py-2"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <TimingEditor
@@ -1447,7 +1447,7 @@ export function DailyScheduleBoard({
                           />
                         </div>
                         <div
-                          className="px-3 py-3"
+                          className="px-2 py-2"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <DailyTargetEditor
@@ -1468,7 +1468,7 @@ export function DailyScheduleBoard({
                               setSelectedRowKey(row.id);
                               toggleLogistics(row.id);
                             }}
-                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-muted/40"
+                            className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
                           >
                             <span className="flex items-center gap-2 font-medium">
                               Logistics
@@ -1495,7 +1495,7 @@ export function DailyScheduleBoard({
 
                           {logisticsExpanded ? (
                             <div
-                              className="border-t bg-background/40 px-3 py-3"
+                              className="border-t bg-background/40 px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <LogisticsEditor
@@ -1529,7 +1529,7 @@ export function DailyScheduleBoard({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 border-t px-3 py-2.5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1.5 border-t px-2 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <span>
               {initialSchedules.length + selectedProjectCount}{" "}
               {initialSchedules.length + selectedProjectCount === 1
@@ -1549,7 +1549,7 @@ export function DailyScheduleBoard({
           </div>
         </div>
 
-        <aside className="sticky top-[4.5rem] hidden h-[calc(100vh-6.5rem)] overflow-hidden rounded-lg border bg-card xl:block">
+        <aside className="sticky top-[4.5rem] hidden h-[calc(100vh-6.5rem)] overflow-hidden border bg-card xl:block">
           <ResourcePoolPanel
             contextKey={selectedRowKey ?? undefined}
             totalEmployees={resources.length}
