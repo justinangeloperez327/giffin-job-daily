@@ -1,10 +1,6 @@
 "use client";
 
 import { Textarea } from "@/components/ui/textarea";
-import type {
-  ScheduleEditableFields,
-  TimingFieldErrors,
-} from "@/features/daily-schedule/schedule-fields";
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
   const totalMinutes = index * 30;
@@ -19,54 +15,39 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
   };
 });
 
-export function TimingEditor({
+export function TimeSelectEditor({
   value,
-  errors,
+  error,
   disabled,
+  ariaLabel,
   onChange,
 }: {
-  value: ScheduleEditableFields;
-  errors: TimingFieldErrors;
+  value: string;
+  error?: string;
   disabled: boolean;
-  onChange: (
-    field: "campStartTime" | "startTime" | "endTime",
-    value: string,
-  ) => void;
+  ariaLabel: string;
+  onChange: (value: string) => void;
 }) {
-  const fields = [
-    ["campStartTime", "Camp"],
-    ["startTime", "Start"],
-    ["endTime", "End"],
-  ] as const;
-
   return (
-    <div className="grid grid-cols-3 gap-1.5">
-      {fields.map(([field, label]) => (
-        <div key={field} className="space-y-1">
-          <label className="text-[11px] text-muted-foreground">
-            {label}
-          </label>
-          <select
-            value={value[field]}
-            disabled={disabled}
-            aria-invalid={Boolean(errors[field])}
-            onChange={(event) => onChange(field, event.target.value)}
-            className="h-8 w-full border border-input bg-background px-1.5 text-xs tabular-nums outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="">—</option>
-            {TIME_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          {errors[field] ? (
-            <p className="text-[11px] leading-4 text-destructive">
-              {errors[field]}
-            </p>
-          ) : null}
-        </div>
-      ))}
+    <div className="space-y-1">
+      <select
+        value={value}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        aria-invalid={Boolean(error)}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 w-full border border-input bg-background px-1.5 text-xs tabular-nums outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <option value="">—</option>
+        {TIME_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {error ? (
+        <p className="text-[11px] leading-4 text-destructive">{error}</p>
+      ) : null}
     </div>
   );
 }
