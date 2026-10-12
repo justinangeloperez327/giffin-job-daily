@@ -75,7 +75,7 @@ export default async function ProjectDetailPage({
     <div className="space-y-5">
       <PageHeader
         title={project.projectName}
-        description={`Job ${project.jobNo} · SO ${project.soNo}`}
+        description={`${project.customerName} · Job ${project.jobNo} · SO ${project.soNo}`}
         actions={
           <Link
             href="/projects"
@@ -87,7 +87,11 @@ export default async function ProjectDetailPage({
         }
       />
 
-      <div className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-3">
+      <div className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-4">
+        <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r">
+          <p className="text-xs text-muted-foreground">Client / Customer</p>
+          <p className="mt-1 text-sm font-medium">{project.customerName}</p>
+        </div>
         <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r">
           <p className="text-xs text-muted-foreground">Job No</p>
           <p className="mt-1 text-sm font-medium">{project.jobNo}</p>
