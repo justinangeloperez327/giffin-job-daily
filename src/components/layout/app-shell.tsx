@@ -45,7 +45,7 @@ type ShellUser = {
 
 const baseNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Daily Schedule", href: "/daily-schedule", icon: CalendarDays },
+  { name: "Schedules", href: "/schedules", icon: CalendarDays },
   { name: "Projects", href: "/projects", icon: HardHat },
   { name: "Labours", href: "/labours", icon: UsersRound },
 ];
