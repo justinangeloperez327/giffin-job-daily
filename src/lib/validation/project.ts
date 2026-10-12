@@ -10,6 +10,7 @@ export const projectKeySchema = z.object({
 
 export const projectInputSchema = z.object({
   projectName: requiredText("Project name", 200),
+  customerName: requiredText("Customer name", 200),
   jobNo: projectJobNoSchema,
   soNo: requiredText("SO number", 50),
 });
