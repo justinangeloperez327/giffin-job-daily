@@ -159,7 +159,7 @@ function LabourCell({
             return (
               <div
                 key={employeeId}
-                className="flex items-center justify-between gap-2 rounded-sm bg-muted/60 px-2 py-1"
+                className="flex items-center justify-between gap-2 bg-muted/60 px-2 py-1"
               >
                 <span className="min-w-0 truncate text-xs">
                   {resource?.employeeName ?? employeeId}
@@ -171,7 +171,7 @@ function LabourCell({
                     event.stopPropagation();
                     onRemove(employeeId);
                   }}
-                  className="shrink-0 rounded-sm p-0.5 text-muted-foreground hover:bg-background hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+                  className="shrink-0 p-0.5 text-muted-foreground hover:bg-background hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
                   aria-label={`Remove ${resource?.employeeName ?? employeeId}`}
                 >
                   <X className="size-3" />
@@ -1193,7 +1193,7 @@ export function DailyScheduleBoard({
                         <div className="relative px-2 py-2 pr-9">
                           <button
                             type="button"
-                            className="block w-full rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             aria-pressed={selected}
                             onClick={(event) => {
                               event.stopPropagation();
