@@ -120,7 +120,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r bg-card md:flex md:flex-col">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 min-w-60 max-w-60 shrink-0 border-r bg-card md:flex md:flex-col">
         <div className="flex h-14 items-center border-b px-4">
           <Link href="/" className="min-w-0">
             <span className="block truncate text-sm font-semibold">
