@@ -24,8 +24,8 @@ export function LogisticsEditor({
   );
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <div className="space-y-1.5">
+    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+      <div className="space-y-1">
         <p className="text-xs font-medium text-muted-foreground">Driver</p>
         <DriverSelector
           options={driverOptions}
@@ -35,7 +35,7 @@ export function LogisticsEditor({
         />
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <label className="text-xs font-medium text-muted-foreground">
           Equipment / Vehicle
         </label>
@@ -44,20 +44,21 @@ export function LogisticsEditor({
           maxLength={200}
           disabled={disabled}
           placeholder="e.g. Bus 01, Pickup 03"
+          className="h-9 rounded-none px-2"
           onChange={(event) => onEquipmentVehicleChange(event.target.value)}
         />
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <p className="text-xs font-medium text-muted-foreground">Driver Name</p>
-        <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 text-sm">
+        <div className="flex h-9 items-center border bg-muted/30 px-2 text-sm">
           {driver?.employeeName ?? "—"}
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <p className="text-xs font-medium text-muted-foreground">Driver Mobile</p>
-        <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 text-sm">
+        <div className="flex h-9 items-center border bg-muted/30 px-2 text-sm">
           {driver?.mobileNumber ?? "—"}
         </div>
       </div>
