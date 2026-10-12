@@ -1112,7 +1112,7 @@ export function DailyScheduleBoard({
       ) : null}
 
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 overflow-hidden border bg-card">
+        <div className="min-w-0 overflow-hidden border border-dashed bg-card">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1180px] table-fixed border-collapse">
               <colgroup>
@@ -1125,13 +1125,13 @@ export function DailyScheduleBoard({
                 <col className="w-[17%]" />
               </colgroup>
               <thead>
-                <tr className="border-b bg-muted/30">
+                <tr className="border-b border-dashed bg-muted/30">
                   {["Project", "Foreman", "Labours", "Camp", "Start", "End", "Daily Target"].map(
                     (heading) => (
                       <th
                         key={heading}
                         scope="col"
-                        className="px-2 py-2 text-left text-xs font-medium text-muted-foreground"
+                        className="border-r border-dashed px-2 py-2 text-left text-xs font-medium text-muted-foreground last:border-r-0"
                       >
                         {heading}
                       </th>
@@ -1140,7 +1140,7 @@ export function DailyScheduleBoard({
                 </tr>
               </thead>
 
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-dashed">
                 {initialSchedules.length === 0 && draftRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-0">
@@ -1204,7 +1204,7 @@ export function DailyScheduleBoard({
                               selected && "bg-accent/35",
                             )}
                           >
-                            <td className="relative px-2 py-2 pr-9">
+                            <td className="relative border-r border-dashed px-2 py-2 pr-9">
                               <button
                                 type="button"
                                 className="block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1243,7 +1243,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="px-2 py-2"
+                              className="border-r border-dashed px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <ForemanSelector
@@ -1256,7 +1256,7 @@ export function DailyScheduleBoard({
                               />
                             </td>
 
-                            <td className="px-2 py-2">
+                            <td className="border-r border-dashed px-2 py-2">
                               <LabourCell
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
@@ -1268,7 +1268,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="px-1.5 py-2"
+                              className="border-r border-dashed px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1283,7 +1283,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="px-1.5 py-2"
+                              className="border-r border-dashed px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1298,7 +1298,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="px-1.5 py-2"
+                              className="border-r border-dashed px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1431,7 +1431,7 @@ export function DailyScheduleBoard({
                             )}
                           >
                             <td
-                              className="relative px-2 py-2 pr-9"
+                              className="relative border-r border-dashed px-2 py-2 pr-9"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <ProjectSelector
@@ -1460,7 +1460,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="px-2 py-2"
+                              className="border-r border-dashed px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <ForemanSelector
@@ -1473,7 +1473,7 @@ export function DailyScheduleBoard({
                               />
                             </td>
 
-                            <td className="px-2 py-2">
+                            <td className="border-r border-dashed px-2 py-2">
                               <LabourCell
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
@@ -1485,7 +1485,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="px-1.5 py-2"
+                              className="border-r border-dashed px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1504,7 +1504,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="px-1.5 py-2"
+                              className="border-r border-dashed px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1519,7 +1519,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="px-1.5 py-2"
+                              className="border-r border-dashed px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
