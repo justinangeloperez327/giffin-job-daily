@@ -6,11 +6,14 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   UserRoundCog,
   UsersRound,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { logoutAction } from "@/app/login/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -51,10 +54,12 @@ function Navigation({
   pathname,
   role,
   mobile = false,
+  collapsed = false,
 }: {
   pathname: string;
   role: UserRoleValue;
   mobile?: boolean;
+  collapsed?: boolean;
 }) {
   const navigation =
     role === "ADMIN"
@@ -77,15 +82,23 @@ function Navigation({
           <Link
             href={item.href}
             className={cn(
-              "flex h-9 items-center gap-2.5 rounded-md px-3 text-sm transition-colors",
+              "flex h-9 items-center rounded-md text-sm transition-colors",
+              collapsed && !mobile
+                ? "justify-center px-0"
+                : "gap-2.5 px-3",
               active
                 ? "bg-accent font-medium text-accent-foreground"
                 : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
             )}
             aria-current={active ? "page" : undefined}
+            title={collapsed && !mobile ? item.name : undefined}
           >
             <Icon className="size-4 shrink-0" aria-hidden="true" />
-            <span>{item.name}</span>
+            {collapsed && !mobile ? (
+              <span className="sr-only">{item.name}</span>
+            ) : (
+              <span>{item.name}</span>
+            )}
           </Link>
         );
 
@@ -117,34 +130,84 @@ export function AppShell({
   currentUser: ShellUser;
 }) {
   const pathname = usePathname();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 min-w-60 max-w-60 shrink-0 border-r bg-card md:flex md:flex-col">
-        <div className="flex h-14 items-center border-b px-4">
-          <Link href="/" className="min-w-0">
-            <span className="block truncate text-sm font-semibold">
-              Giffin Job Daily
-            </span>
-            <span className="block truncate text-xs text-muted-foreground">
-              Workforce Scheduling
-            </span>
-          </Link>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-30 hidden shrink-0 border-r bg-card transition-[width] duration-200 md:flex md:flex-col",
+          sidebarCollapsed ? "w-16" : "w-60",
+        )}
+      >
+        <div
+          className={cn(
+            "flex h-14 items-center border-b",
+            sidebarCollapsed ? "justify-center px-2" : "justify-between px-4",
+          )}
+        >
+          {!sidebarCollapsed && (
+            <Link href="/" className="min-w-0">
+              <span className="block truncate text-sm font-semibold">
+                Giffin Job Daily
+              </span>
+              <span className="block truncate text-xs text-muted-foreground">
+                Workforce Scheduling
+              </span>
+            </Link>
+          )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 shrink-0"
+            onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="size-4" />
+            ) : (
+              <PanelLeftClose className="size-4" />
+            )}
+          </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3">
-          <Navigation pathname={pathname} role={currentUser.role} />
+        <div className={cn("flex-1 overflow-y-auto", sidebarCollapsed ? "p-2" : "p-3")}>
+          <Navigation
+            pathname={pathname}
+            role={currentUser.role}
+            collapsed={sidebarCollapsed}
+          />
         </div>
 
-        <div className="border-t p-3">
-          <p className="truncate px-3 text-xs font-medium">{currentUser.name}</p>
-          <p className="truncate px-3 text-xs text-muted-foreground">
-            {roleLabel(currentUser.role)}
-          </p>
+        <div className={cn("border-t", sidebarCollapsed ? "p-2" : "p-3")}>
+          {sidebarCollapsed ? (
+            <div
+              className="flex h-9 items-center justify-center text-xs font-medium"
+              title={currentUser.name}
+              aria-label={currentUser.name}
+            >
+              {currentUser.name.trim().charAt(0).toUpperCase()}
+            </div>
+          ) : (
+            <>
+              <p className="truncate px-3 text-xs font-medium">{currentUser.name}</p>
+              <p className="truncate px-3 text-xs text-muted-foreground">
+                {roleLabel(currentUser.role)}
+              </p>
+            </>
+          )}
         </div>
       </aside>
 
-      <div className="md:pl-60">
+      <div
+        className={cn(
+          "transition-[padding] duration-200",
+          sidebarCollapsed ? "md:pl-16" : "md:pl-60",
+        )}
+      >
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-6">
           <div className="flex items-center gap-2 md:hidden">
             <Sheet>
