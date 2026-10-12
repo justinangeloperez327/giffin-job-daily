@@ -14,6 +14,7 @@ import { withSerializableTransaction } from "@/server/database/transaction";
 
 export type SavedProject = {
   projectName: string;
+  customerName: string;
   jobNo: string;
   soNo: string;
 };
@@ -45,6 +46,7 @@ export async function createProject(
       data: parsed.data,
       select: {
         projectName: true,
+        customerName: true,
         jobNo: true,
         soNo: true,
       },
@@ -80,6 +82,7 @@ export async function updateProject(
       data: parsed.data,
       select: {
         projectName: true,
+        customerName: true,
         jobNo: true,
         soNo: true,
       },
@@ -108,6 +111,7 @@ export async function deleteProject(
         },
         select: {
           projectName: true,
+          customerName: true,
           jobNo: true,
           soNo: true,
           _count: {
@@ -135,6 +139,7 @@ export async function deleteProject(
         },
         select: {
           projectName: true,
+          customerName: true,
           jobNo: true,
           soNo: true,
         },
