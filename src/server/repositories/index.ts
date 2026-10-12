@@ -16,6 +16,7 @@ export {
 } from "@/server/repositories/projects";
 export {
   getDailySchedule,
+  listRecentDailySchedules,
   listDailyScheduleLabours,
   listDailySchedulesByDate,
 } from "@/server/repositories/schedules";
