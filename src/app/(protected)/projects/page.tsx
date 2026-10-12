@@ -169,7 +169,7 @@ export default async function ProjectsPage({
             <Input
               name="search"
               defaultValue={data.search}
-              placeholder="Search project, job no, or SO no..."
+              placeholder="Search customer, project, job no, or SO no..."
               className="pl-9"
             />
           </div>
@@ -220,6 +220,7 @@ export default async function ProjectsPage({
                     pageSize={data.pageSize}
                   />
                 </TableHead>
+                <TableHead>Customer</TableHead>
                 <TableHead>
                   <SortHeader
                     label="Project Name"
@@ -252,6 +253,7 @@ export default async function ProjectsPage({
                       </Link>
                     </TableCell>
                     <TableCell>{project.soNo}</TableCell>
+                    <TableCell>{project.customerName}</TableCell>
                     <TableCell>{project.projectName}</TableCell>
                     <TableCell className="text-right tabular-nums text-muted-foreground">
                       {project._count.dailySchedules}
@@ -261,6 +263,7 @@ export default async function ProjectsPage({
                         <ProjectActions
                           project={{
                             projectName: project.projectName,
+                            customerName: project.customerName,
                             jobNo: project.jobNo,
                             soNo: project.soNo,
                             scheduleCount: project._count.dailySchedules,
@@ -272,13 +275,13 @@ export default async function ProjectsPage({
                 ))
               ) : (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={canManage ? 5 : 4} className="h-40 text-center">
+                  <TableCell colSpan={canManage ? 6 : 5} className="h-40 text-center">
                     <p className="text-sm font-medium">
                       {data.search ? "No projects found" : "No projects yet"}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {data.search
-                        ? "Try a different project name, job number, or SO number."
+                        ? "Try a different customer, project name, job number, or SO number."
                         : "Add the first project to start scheduling work."}
                     </p>
                   </TableCell>
