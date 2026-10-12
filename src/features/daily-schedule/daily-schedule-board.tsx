@@ -2,7 +2,7 @@
 
 import {
   CalendarDays,
-  ChevronDown,
+  Truck,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -133,38 +133,49 @@ function LabourCell({
   employeeIds,
   resources,
   pending,
+  disabled,
   onRemove,
+  onManage,
 }: {
   employeeIds: string[];
   resources: ScheduleResource[];
   pending: boolean;
+  disabled?: boolean;
   onRemove: (employeeId: string) => void;
+  onManage: () => void;
 }) {
-  const visible = employeeIds.slice(0, 3);
+  const visible = employeeIds.slice(0, 2);
 
   return (
-    <div>
-      <p className="text-sm font-medium">
-        {employeeIds.length} assigned
-      </p>
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-sm font-medium tabular-nums">
+          {employeeIds.length} assigned
+        </span>
+        <button
+          type="button"
+          disabled={disabled || pending}
+          onClick={(event) => {
+            event.stopPropagation();
+            onManage();
+          }}
+          className="h-7 shrink-0 px-1.5 text-xs font-medium text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50"
+          aria-label={`Manage labour assignments (${employeeIds.length} assigned)`}
+        >
+          {employeeIds.length > 0 ? "Manage" : "Assign"}
+        </button>
+      </div>
 
-      {employeeIds.length === 0 ? (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Select this row and use the Labour pool.
-        </p>
-      ) : (
-        <div className="mt-1.5 space-y-1">
+      {visible.length > 0 ? (
+        <div className="space-y-0.5">
           {visible.map((employeeId) => {
             const resource = resources.find(
               (item) => item.employeeId === employeeId,
             );
 
             return (
-              <div
-                key={employeeId}
-                className="flex items-center justify-between gap-2 bg-muted/60 px-2 py-1"
-              >
-                <span className="min-w-0 truncate text-xs">
+              <div key={employeeId} className="flex items-center justify-between gap-1">
+                <span className="min-w-0 truncate text-xs text-muted-foreground">
                   {resource?.employeeName ?? employeeId}
                 </span>
                 <button
@@ -174,7 +185,7 @@ function LabourCell({
                     event.stopPropagation();
                     onRemove(employeeId);
                   }}
-                  className="flex size-6 shrink-0 items-center justify-center text-muted-foreground hover:bg-background hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+                  className="flex size-6 shrink-0 items-center justify-center text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
                   aria-label={`Remove ${resource?.employeeName ?? employeeId}`}
                 >
                   <X className="size-3" />
@@ -182,14 +193,13 @@ function LabourCell({
               </div>
             );
           })}
-
           {employeeIds.length > visible.length ? (
-            <p className="px-1 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               +{employeeIds.length - visible.length} more
             </p>
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -225,6 +235,8 @@ export function DailyScheduleBoard({
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(
     firstSavedKey,
   );
+  const [resourcePoolOpen, setResourcePoolOpen] = useState(false);
+  const [poolTab, setPoolTab] = useState<"foremen" | "labours">("foremen");
   const [deletingJobNo, setDeletingJobNo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const dirtySavedCount = Object.keys(savedEdits).length;
@@ -240,6 +252,8 @@ export function DailyScheduleBoard({
     setSavedEdits({});
     setExpandedLogisticsRows(new Set());
     setSelectedRowKey(firstSavedKey);
+    setResourcePoolOpen(false);
+    setPoolTab("foremen");
   }, [selectedDate, firstSavedKey]);
 
   useEffect(() => {
@@ -934,6 +948,15 @@ export function DailyScheduleBoard({
     });
   }
 
+  function openResourcePool(rowKey: string, tab: "foremen" | "labours") {
+    setSelectedRowKey(rowKey);
+    setPoolTab(tab);
+
+    if (window.matchMedia("(max-width: 1279px)").matches) {
+      setResourcePoolOpen(true);
+    }
+  }
+
   const selectedProjectJobNo = selectedProjectForRow(selectedRowKey);
   const selectedForemanId = selectedForemanForRow(selectedRowKey);
   const selectedLabourIds = selectedLaboursForRow(selectedRowKey);
@@ -1041,7 +1064,7 @@ export function DailyScheduleBoard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Sheet>
+          <Sheet open={resourcePoolOpen} onOpenChange={setResourcePoolOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" className="xl:hidden">
                 <UsersRound className="size-4" />
@@ -1054,6 +1077,8 @@ export function DailyScheduleBoard({
               </SheetHeader>
               <ResourcePoolPanel
                 contextKey={selectedRowKey ?? undefined}
+                 activeTab={poolTab}
+                 onTabChange={setPoolTab}
                 totalEmployees={resources.length}
                 error={resourceError}
                 selectedLabel={selectedLabel}
@@ -1661,6 +1686,8 @@ export function DailyScheduleBoard({
         <aside className="sticky top-[4.5rem] hidden h-[calc(100vh-6.5rem)] overflow-hidden border bg-card xl:block">
           <ResourcePoolPanel
             contextKey={selectedRowKey ?? undefined}
+                 activeTab={poolTab}
+                 onTabChange={setPoolTab}
             totalEmployees={resources.length}
             error={resourceError}
             selectedLabel={selectedLabel}
