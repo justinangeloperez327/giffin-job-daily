@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 
 export function ResourcePoolPanel({
   contextKey,
+  activeTab,
+  onTabChange,
   totalEmployees,
   error,
   selectedLabel,
@@ -25,6 +27,8 @@ export function ResourcePoolPanel({
   onViewAssignment,
 }: {
   contextKey?: string;
+  activeTab: "foremen" | "labours";
+  onTabChange: (tab: "foremen" | "labours") => void;
   totalEmployees: number;
   error?: string;
   selectedLabel?: string;
@@ -37,7 +41,6 @@ export function ResourcePoolPanel({
   onReassignLabour: (employeeId: string, fromRowKey: string) => void;
   onViewAssignment: (rowKey: string) => void;
 }) {
-  const [tab, setTab] = useState<"foremen" | "labours">("foremen");
   const [search, setSearch] = useState("");
   const [designation, setDesignation] = useState("");
   const [availability, setAvailability] = useState<
@@ -170,12 +173,12 @@ export function ResourcePoolPanel({
         <button
           type="button"
           onClick={() => {
-            setTab("foremen");
+            onTabChange("foremen");
             setSearch("");
           }}
           className={cn(
             "h-8 rounded-none text-xs font-medium transition-colors",
-            tab === "foremen"
+            activeTab === "foremen"
               ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:text-foreground",
           )}
@@ -185,12 +188,12 @@ export function ResourcePoolPanel({
         <button
           type="button"
           onClick={() => {
-            setTab("labours");
+            onTabChange("labours");
             setSearch("");
           }}
           className={cn(
             "h-8 rounded-none text-xs font-medium transition-colors",
-            tab === "labours"
+            activeTab === "labours"
               ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:text-foreground",
           )}
@@ -201,7 +204,7 @@ export function ResourcePoolPanel({
 
       {error ? (
         <div className="px-4 py-5 text-sm text-destructive">{error}</div>
-      ) : tab === "foremen" ? (
+      ) : activeTab === "foremen" ? (
         <>
           <div className="border-b p-3">
             <div className="relative">
