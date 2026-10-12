@@ -6,12 +6,14 @@ describe("project validation", () => {
   it("trims valid project values", () => {
     const project = projectInputSchema.parse({
       projectName: "  Tower Project  ",
+      customerName: "  Aldar  ",
       jobNo: " JOB-001 ",
       soNo: " SO-1001 ",
     });
 
     expect(project).toEqual({
       projectName: "Tower Project",
+      customerName: "Aldar",
       jobNo: "JOB-001",
       soNo: "SO-1001",
     });
@@ -21,6 +23,7 @@ describe("project validation", () => {
     expect(
       projectInputSchema.safeParse({
         projectName: "",
+        customerName: "",
         jobNo: "",
         soNo: "",
       }).success,
