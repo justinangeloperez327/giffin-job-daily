@@ -1139,38 +1139,62 @@ export function DailyScheduleBoard({
       ) : null}
 
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 overflow-hidden border border-dashed bg-card">
+        <div className="min-w-0 overflow-hidden border bg-card">
           <div className="overflow-x-auto">
-            <table aria-label="Daily workforce planning sheet" className="w-full min-w-[1280px] table-fixed border-collapse">
+            <table aria-label="Daily workforce planning sheet" className="w-full min-w-[1480px] table-fixed border-collapse text-sm">
               <colgroup>
-                <col className="w-[26%]" />
+                <col className="w-[27%]" />
                 <col className="w-[16%]" />
-                <col className="w-[18%]" />
-                <col className="w-[9%]" />
-                <col className="w-[9%]" />
-                <col className="w-[9%]" />
-                <col className="w-[13%]" />
+                <col className="w-[14%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[14%]" />
+                <col className="w-[5%]" />
               </colgroup>
-              <thead>
-                <tr className="border-b border-dashed bg-muted/30">
-                  {["Project Details", "Foreman", "Labours", "Camp", "Start", "End", "Daily Target"].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        scope="col"
-                        className="border-r border-dashed px-2 py-2 text-left text-xs font-medium text-muted-foreground last:border-r-0"
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
+              <thead className="bg-muted/50">
+                <tr className="border-b border-border/60">
+                  {["Project Details", "Foreman", "Labours"].map((heading) => (
+                    <th
+                      key={heading}
+                      rowSpan={2}
+                      scope="col"
+                      className="px-2 py-2 text-left align-middle text-xs font-medium text-muted-foreground"
+                    >
+                      {heading}
+                    </th>
+                  ))}
+                  <th
+                    colSpan={3}
+                    scope="colgroup"
+                    className="border-x border-border/60 px-1 py-1 text-center text-xs font-medium text-muted-foreground"
+                  >
+                    Timing
+                  </th>
+                  <th rowSpan={2} scope="col" className="px-2 py-2 text-left align-middle text-xs font-medium text-muted-foreground">
+                    Daily Target
+                  </th>
+                  <th rowSpan={2} scope="col" className="px-1 py-2 text-center align-middle text-xs font-medium text-muted-foreground">
+                    Actions
+                  </th>
+                </tr>
+                <tr className="border-b border-border/70">
+                  {["Camp", "Start", "End"].map((heading) => (
+                    <th
+                      key={heading}
+                      scope="col"
+                      className="border-x border-border/30 px-1 py-1.5 text-left text-xs font-medium text-muted-foreground"
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-dashed">
+              <tbody className="divide-y divide-border/70">
                 {initialSchedules.length === 0 && draftRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-0">
+                    <td colSpan={8} className="p-0">
                       <div className="flex min-h-36 flex-col items-center justify-center px-5 text-center">
                         <div className="mb-3 border bg-muted/40 p-2.5">
                           <CalendarDays className="size-5 text-muted-foreground" />
@@ -1228,11 +1252,11 @@ export function DailyScheduleBoard({
                             onClick={() => setSelectedRowKey(rowKey)}
                             onFocus={() => setSelectedRowKey(rowKey)}
                             className={cn(
-                              "cursor-pointer align-top transition-colors",
+                              "cursor-pointer align-top transition-colors hover:bg-muted/30",
                               selected && "bg-accent/35",
                             )}
                           >
-                            <td className="relative border-r border-dashed px-2 py-2 pr-9">
+                            <td className={cn("border-l-2 border-transparent px-2 py-2", selected && "border-l-primary")}>
                               <button
                                 type="button"
                                 className="block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1273,7 +1297,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-2 py-2"
+                              className="px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <ForemanSelector
@@ -1286,7 +1310,7 @@ export function DailyScheduleBoard({
                               />
                             </td>
 
-                            <td className="border-r border-dashed px-2 py-2">
+                            <td className="px-2 py-2">
                               <LabourCell
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
@@ -1298,7 +1322,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1313,7 +1337,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1328,7 +1352,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1357,7 +1381,7 @@ export function DailyScheduleBoard({
                           </tr>
 
                           <tr className={cn(selected && "bg-accent/20")}>
-                            <td colSpan={7} className="border-t border-dashed p-0">
+                            <td colSpan={8} className="border-t border-dashed p-0">
                               <button
                                 type="button"
                                 aria-expanded={logisticsExpanded}
@@ -1458,15 +1482,15 @@ export function DailyScheduleBoard({
                             onClick={() => setSelectedRowKey(row.id)}
                             onFocus={() => setSelectedRowKey(row.id)}
                             className={cn(
-                              "cursor-pointer bg-muted/10 align-top transition-colors",
+                              "cursor-pointer align-top transition-colors hover:bg-muted/30",
                               selected && "bg-accent/35",
                             )}
                           >
                             <td
-                              className="relative border-r border-dashed px-2 py-2 pr-9"
+                              className={cn("border-l-2 border-transparent px-2 py-2", selected && "border-l-primary")}
                               onClick={(event) => event.stopPropagation()}
                             >
-                              <button type="button" aria-pressed={selected} onClick={() => setSelectedRowKey(row.id)} className="mb-1 text-xs text-muted-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring">{selected ? "Resource pool selected" : "Select for resource pool"}</button>
+                              <button type="button" aria-pressed={selected} onClick={() => setSelectedRowKey(row.id)} className="sr-only">{selected ? "Selected for resource assignment" : "Select project row for resource assignment"}</button>
                               <ProjectSelector
                                 projects={projects}
                                 value={row.projectJobNo}
@@ -1493,7 +1517,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-2 py-2"
+                              className="px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <ForemanSelector
@@ -1506,7 +1530,7 @@ export function DailyScheduleBoard({
                               />
                             </td>
 
-                            <td className="border-r border-dashed px-2 py-2">
+                            <td className="px-2 py-2">
                               <LabourCell
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
@@ -1518,7 +1542,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1537,7 +1561,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1552,7 +1576,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1590,7 +1614,7 @@ export function DailyScheduleBoard({
                               selected && "bg-accent/20",
                             )}
                           >
-                            <td colSpan={7} className="border-t border-dashed p-0">
+                            <td colSpan={8} className="border-t border-dashed p-0">
                               <button
                                 type="button"
                                 aria-expanded={logisticsExpanded}
