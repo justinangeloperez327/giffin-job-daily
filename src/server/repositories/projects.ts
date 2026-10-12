@@ -29,6 +29,12 @@ function buildProjectWhere(search?: string): Prisma.ProjectWhereInput | undefine
         },
       },
       {
+        customerName: {
+          contains: normalizedSearch,
+          mode: "insensitive",
+        },
+      },
+      {
         jobNo: {
           contains: normalizedSearch,
           mode: "insensitive",
@@ -66,6 +72,7 @@ export async function listProjects({
     where: buildProjectWhere(search),
     select: {
       projectName: true,
+      customerName: true,
       jobNo: true,
       soNo: true,
       _count: {
@@ -84,6 +91,7 @@ export async function listProjectOptions() {
   return prisma.project.findMany({
     select: {
       projectName: true,
+      customerName: true,
       jobNo: true,
       soNo: true,
     },
