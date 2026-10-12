@@ -19,6 +19,7 @@ import {
   getLabourDetailByEmployeeId,
   getProjectDetailByJobNo,
   listDailySchedulesByDate,
+  listRecentDailySchedules,
   listLabourDesignations,
   listLabours,
   listProjectOptions,
@@ -232,6 +233,15 @@ export async function loadResourcePool(
         take: parsed.data.take,
       }),
     );
+  } catch (error) {
+    return actionFailure(mapDatabaseError(error));
+  }
+}
+
+
+export async function loadRecentSchedules() {
+  try {
+    return actionSuccess(await listRecentDailySchedules());
   } catch (error) {
     return actionFailure(mapDatabaseError(error));
   }
