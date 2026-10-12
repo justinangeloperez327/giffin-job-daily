@@ -1367,10 +1367,10 @@ export function DailyScheduleBoard({
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  className="size-8 text-muted-foreground hover:text-foreground"
+                                  className={cn("size-8 text-muted-foreground hover:text-foreground", (selectedDriver || editableFields.equipmentVehicle) && "text-primary")}
                                   aria-expanded={logisticsExpanded}
                                   aria-label={logisticsExpanded ? "Hide project logistics" : "Edit project logistics"}
-                                  title="Logistics"
+                                  title="Show or hide logistics details"
                                   onClick={() => {
                                     setSelectedRowKey(rowKey);
                                     toggleLogistics(rowKey);
@@ -1478,9 +1478,7 @@ export function DailyScheduleBoard({
                           >
                             <td
                               className={cn("border-l-2 border-transparent px-2 py-2", selected && "border-l-primary")}
-                              onClick={(event) => event.stopPropagation()}
                             >
-                              <button type="button" aria-pressed={selected} onClick={() => setSelectedRowKey(row.id)} className="sr-only">{selected ? "Selected for resource assignment" : "Select project row for resource assignment"}</button>
                               <ProjectSelector
                                 projects={projects}
                                 value={row.projectJobNo}
@@ -1592,10 +1590,10 @@ export function DailyScheduleBoard({
                                   type="button"
                                   variant="ghost"
                                   size="icon"
-                                  className="size-8 text-muted-foreground hover:text-foreground"
+                                  className={cn("size-8 text-muted-foreground hover:text-foreground", (selectedDriver || row.equipmentVehicle) && "text-primary")}
                                   aria-expanded={logisticsExpanded}
                                   aria-label={logisticsExpanded ? "Hide project logistics" : "Edit project logistics"}
-                                  title="Logistics"
+                                  title="Show or hide logistics details"
                                   onClick={() => {
                                     setSelectedRowKey(row.id);
                                     toggleLogistics(row.id);
