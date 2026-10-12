@@ -12,6 +12,7 @@ import {
 function projectInputFromForm(formData: FormData) {
   return {
     projectName: formData.get("projectName"),
+    customerName: formData.get("customerName"),
     jobNo: formData.get("jobNo"),
     soNo: formData.get("soNo"),
   };
