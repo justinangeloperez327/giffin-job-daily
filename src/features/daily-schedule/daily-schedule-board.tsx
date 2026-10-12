@@ -1401,48 +1401,17 @@ export function DailyScheduleBoard({
                             </td>
                           </tr>
 
-                          <tr className={cn(selected && "bg-accent/20")}>
-                            <td colSpan={8} className="border-t border-dashed p-0">
-                              <button
-                                type="button"
-                                aria-expanded={logisticsExpanded}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setSelectedRowKey(rowKey);
-                                  toggleLogistics(rowKey);
-                                }}
-                                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
-                              >
-                                <span className="flex items-center gap-2 font-medium">
-                                  Logistics
-                                  {selectedDriver ||
-                                  editableFields.equipmentVehicle ? (
-                                    <span className="font-normal text-muted-foreground">
-                                      {selectedDriver?.employeeName ??
-                                        "No driver"}
-                                      {editableFields.equipmentVehicle
-                                        ? ` · ${editableFields.equipmentVehicle}`
-                                        : ""}
-                                    </span>
-                                  ) : (
-                                    <span className="font-normal text-muted-foreground">
-                                      Optional
-                                    </span>
-                                  )}
-                                </span>
-                                <ChevronDown
-                                  className={cn(
-                                    "size-4 text-muted-foreground transition-transform",
-                                    logisticsExpanded && "rotate-180",
-                                  )}
-                                />
-                              </button>
-
-                              {logisticsExpanded ? (
-                                <div
-                                  className="border-t bg-muted/10 px-2 py-2"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
+                          {logisticsExpanded ? (
+                            <tr className="bg-muted/20">
+                              <td colSpan={8} className="border-t border-border/70 p-3">
+                                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+                                  <span className="font-medium">Logistics</span>
+                                  <span className="text-muted-foreground">
+                                    {selectedDriver?.employeeName ?? "No driver"}
+                                    {editableFields.equipmentVehicle ? ` · ${editableFields.equipmentVehicle}` : ""}
+                                  </span>
+                                </div>
+                                <div onClick={(event) => event.stopPropagation()}>
                                   <LogisticsEditor
                                     driverOptions={driverOptions}
                                     driverEmployeeId={
@@ -1468,9 +1437,9 @@ export function DailyScheduleBoard({
                                     }
                                   />
                                 </div>
-                              ) : null}
-                            </td>
-                          </tr>
+                              </td>
+                            </tr>
+                          ) : null}
                         </Fragment>
                       );
                     })}
@@ -1651,52 +1620,17 @@ export function DailyScheduleBoard({
                             </td>
                           </tr>
 
-                          <tr
-                            className={cn(
-                              "bg-muted/10",
-                              selected && "bg-accent/20",
-                            )}
-                          >
-                            <td colSpan={8} className="border-t border-dashed p-0">
-                              <button
-                                type="button"
-                                aria-expanded={logisticsExpanded}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setSelectedRowKey(row.id);
-                                  toggleLogistics(row.id);
-                                }}
-                                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
-                              >
-                                <span className="flex items-center gap-2 font-medium">
-                                  Logistics
-                                  {selectedDriver || row.equipmentVehicle ? (
-                                    <span className="font-normal text-muted-foreground">
-                                      {selectedDriver?.employeeName ??
-                                        "No driver"}
-                                      {row.equipmentVehicle
-                                        ? ` · ${row.equipmentVehicle}`
-                                        : ""}
-                                    </span>
-                                  ) : (
-                                    <span className="font-normal text-muted-foreground">
-                                      Optional
-                                    </span>
-                                  )}
-                                </span>
-                                <ChevronDown
-                                  className={cn(
-                                    "size-4 text-muted-foreground transition-transform",
-                                    logisticsExpanded && "rotate-180",
-                                  )}
-                                />
-                              </button>
-
-                              {logisticsExpanded ? (
-                                <div
-                                  className="border-t bg-background/40 px-2 py-2"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
+                          {logisticsExpanded ? (
+                            <tr className="bg-muted/20">
+                              <td colSpan={8} className="border-t border-border/70 p-3">
+                                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+                                  <span className="font-medium">Logistics</span>
+                                  <span className="text-muted-foreground">
+                                    {selectedDriver?.employeeName ?? "No driver"}
+                                    {row.equipmentVehicle ? ` · ${row.equipmentVehicle}` : ""}
+                                  </span>
+                                </div>
+                                <div onClick={(event) => event.stopPropagation()}>
                                   <LogisticsEditor
                                     driverOptions={driverOptions}
                                     driverEmployeeId={row.driverEmployeeId}
@@ -1718,9 +1652,9 @@ export function DailyScheduleBoard({
                                     }
                                   />
                                 </div>
-                              ) : null}
-                            </td>
-                          </tr>
+                              </td>
+                            </tr>
+                          ) : null}
                         </Fragment>
                       );
                     })}
