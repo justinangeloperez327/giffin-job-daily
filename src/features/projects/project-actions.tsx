@@ -44,6 +44,7 @@ import type { ActionError } from "@/lib/action-result";
 
 export type ProjectActionRecord = {
   projectName: string;
+  customerName: string;
   jobNo: string;
   soNo: string;
   scheduleCount: number;
@@ -140,7 +141,7 @@ export function ProjectActions({ project }: { project: ProjectActionRecord }) {
           <SheetHeader className="border-b px-5 py-4">
             <SheetTitle>Edit Project</SheetTitle>
             <p className="text-sm text-muted-foreground">
-              Update project, job number, or sales order information.
+              Update customer, project, job number, or sales order information.
             </p>
           </SheetHeader>
 
