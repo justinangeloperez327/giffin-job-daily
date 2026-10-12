@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 export type ScheduleProjectOption = {
   projectName: string;
+  customerName: string;
   jobNo: string;
   soNo: string;
 };
@@ -61,7 +62,7 @@ export function ProjectSelector({
                   {selectedProject.projectName}
                 </span>
                 <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                  Job {selectedProject.jobNo} · SO {selectedProject.soNo}
+                  {selectedProject.customerName} · Job {selectedProject.jobNo} · SO {selectedProject.soNo}
                 </span>
               </>
             ) : (
@@ -70,7 +71,7 @@ export function ProjectSelector({
                   Select project
                 </span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Search job, SO, or project name
+                  Search customer, job, SO, or project
                 </span>
               </>
             )}
@@ -84,7 +85,7 @@ export function ProjectSelector({
         className="w-[min(26rem,calc(100vw-2rem))] p-0"
       >
         <Command>
-          <CommandInput placeholder="Search project, job no, or SO no..." />
+          <CommandInput placeholder="Search customer, project, job no, or SO no..." />
           <CommandList>
             <CommandEmpty>
               {error ?? "No matching projects found."}
@@ -97,7 +98,7 @@ export function ProjectSelector({
                 return (
                   <CommandItem
                     key={project.jobNo}
-                    value={`${project.projectName} ${project.jobNo} ${project.soNo}`}
+                    value={`${project.customerName} ${project.projectName} ${project.jobNo} ${project.soNo}`}
                     disabled={unavailable}
                     onSelect={() => {
                       onValueChange(project.jobNo);
@@ -115,7 +116,7 @@ export function ProjectSelector({
                         {project.projectName}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        Job {project.jobNo} · SO {project.soNo}
+                        {project.customerName} · Job {project.jobNo} · SO {project.soNo}
                       </span>
                     </span>
                     {unavailable ? (
