@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 
 export type ProjectFormDefaults = {
   projectName?: string;
+  customerName?: string;
   jobNo?: string;
   soNo?: string;
 };
@@ -55,6 +56,24 @@ export function ProjectFormFields({
           aria-invalid={Boolean(error?.fieldErrors?.projectName)}
         />
         <FieldError error={error} field="projectName" />
+      </div>
+
+      <div className="space-y-1.5">
+        <label
+          htmlFor={`${idPrefix}-customer-name`}
+          className="text-sm font-medium"
+        >
+          Client / Customer
+        </label>
+        <Input
+          id={`${idPrefix}-customer-name`}
+          name="customerName"
+          defaultValue={defaults?.customerName}
+          maxLength={200}
+          required
+          aria-invalid={Boolean(error?.fieldErrors?.customerName)}
+        />
+        <FieldError error={error} field="customerName" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
