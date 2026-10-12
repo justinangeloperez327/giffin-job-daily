@@ -55,6 +55,7 @@ import {
   validateTimingFields,
 } from "@/features/daily-schedule/schedule-fields";
 import { buildLabourOptions } from "@/features/daily-schedule/labour-options";
+import { ProjectIdentityDetails } from "@/features/daily-schedule/project-identity-details";
 import {
   ProjectSelector,
   type ScheduleProjectOption,
@@ -1115,19 +1116,19 @@ export function DailyScheduleBoard({
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 overflow-hidden border border-dashed bg-card">
           <div className="overflow-x-auto">
-            <table aria-label="Daily workforce planning sheet" className="w-full min-w-[1180px] table-fixed border-collapse">
+            <table aria-label="Daily workforce planning sheet" className="w-full min-w-[1280px] table-fixed border-collapse">
               <colgroup>
-                <col className="w-[22%]" />
+                <col className="w-[26%]" />
                 <col className="w-[16%]" />
                 <col className="w-[18%]" />
                 <col className="w-[9%]" />
                 <col className="w-[9%]" />
                 <col className="w-[9%]" />
-                <col className="w-[17%]" />
+                <col className="w-[13%]" />
               </colgroup>
               <thead>
                 <tr className="border-b border-dashed bg-muted/30">
-                  {["Project", "Foreman", "Labours", "Camp", "Start", "End", "Daily Target"].map(
+                  {["Project Details", "Foreman", "Labours", "Camp", "Start", "End", "Daily Target"].map(
                     (heading) => (
                       <th
                         key={heading}
@@ -1216,12 +1217,14 @@ export function DailyScheduleBoard({
                                   setSelectedRowKey(rowKey);
                                 }}
                               >
-                                <span className="block text-sm font-medium">
-                                  {row.projectName}
-                                </span>
-                                <span className="mt-1 block text-xs text-muted-foreground">
-                                  {row.customerName} · Job {row.projectJobNo} · SO {row.soNo}
-                                </span>
+                                <ProjectIdentityDetails
+                                  project={{
+                                    customerName: row.customerName,
+                                    projectName: row.projectName,
+                                    soNo: row.soNo,
+                                    jobNo: row.projectJobNo,
+                                  }}
+                                />
                               </button>
                               <Button
                                 variant="ghost"

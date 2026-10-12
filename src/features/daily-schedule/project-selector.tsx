@@ -17,6 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ProjectIdentityDetails } from "@/features/daily-schedule/project-identity-details";
 import { cn } from "@/lib/utils";
 
 export type ScheduleProjectOption = {
@@ -57,14 +58,7 @@ export function ProjectSelector({
         >
           <span className="min-w-0">
             {selectedProject ? (
-              <>
-                <span className="block truncate text-sm font-medium">
-                  {selectedProject.projectName}
-                </span>
-                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                  {selectedProject.customerName} · Job {selectedProject.jobNo} · SO {selectedProject.soNo}
-                </span>
-              </>
+              <ProjectIdentityDetails project={selectedProject} />
             ) : (
               <>
                 <span className="block text-sm font-medium">
@@ -82,7 +76,7 @@ export function ProjectSelector({
 
       <PopoverContent
         align="start"
-        className="w-[min(26rem,calc(100vw-2rem))] p-0"
+        className="w-[min(28rem,calc(100vw-2rem))] p-0"
       >
         <Command>
           <CommandInput placeholder="Search customer, project, job no, or SO no..." />
@@ -112,12 +106,7 @@ export function ProjectSelector({
                       )}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">
-                        {project.projectName}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {project.customerName} · Job {project.jobNo} · SO {project.soNo}
-                      </span>
+                      <ProjectIdentityDetails project={project} />
                     </span>
                     {unavailable ? (
                       <span className="shrink-0 text-xs text-muted-foreground">

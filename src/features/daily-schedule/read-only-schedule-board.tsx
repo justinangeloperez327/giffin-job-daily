@@ -14,6 +14,7 @@ import type {
   ScheduleBoardRow,
   ScheduleResource,
 } from "@/features/daily-schedule/daily-schedule-board";
+import { ProjectIdentityDetails } from "@/features/daily-schedule/project-identity-details";
 import { formatTimeLabel, shiftScheduleDate } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 
@@ -111,13 +112,18 @@ export function ReadOnlyScheduleBoard({
                     <TableCell>
                       <Link
                         href={`/projects/${encodeURIComponent(schedule.projectJobNo)}`}
-                        className="font-medium hover:underline"
+                        className="block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        aria-label={`View project ${schedule.projectName}`}
                       >
-                        {schedule.projectName}
+                        <ProjectIdentityDetails
+                          project={{
+                            customerName: schedule.customerName,
+                            projectName: schedule.projectName,
+                            soNo: schedule.soNo,
+                            jobNo: schedule.projectJobNo,
+                          }}
+                        />
                       </Link>
-                      <div className="text-xs text-muted-foreground">
-                        {schedule.customerName} · Job {schedule.projectJobNo} · SO {schedule.soNo}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <div>{schedule.foremanName}</div>
