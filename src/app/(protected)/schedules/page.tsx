@@ -135,7 +135,7 @@ export default async function SchedulesPage() {
                                 Customer
                               </p>
                               <p className="truncate text-sm font-medium">
-                                {schedule.project.projectName}
+                                {schedule.project.customerName}
                               </p>
                             </div>
 
