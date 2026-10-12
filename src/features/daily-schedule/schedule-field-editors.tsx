@@ -28,7 +28,7 @@ export function TimingEditor({
   ] as const;
 
   return (
-    <div className="space-y-2">
+    <div className="grid grid-cols-3 gap-1.5">
       {fields.map(([field, label]) => (
         <div key={field} className="space-y-1">
           <label className="text-[11px] text-muted-foreground">
@@ -41,7 +41,7 @@ export function TimingEditor({
             disabled={disabled}
             aria-invalid={Boolean(errors[field])}
             onChange={(event) => onChange(field, event.target.value)}
-            className="h-8 px-2 text-xs tabular-nums"
+            className="h-8 rounded-none px-1.5 text-xs tabular-nums"
           />
           {errors[field] ? (
             <p className="text-[11px] leading-4 text-destructive">
@@ -71,7 +71,7 @@ export function DailyTargetEditor({
       rows={4}
       placeholder="Daily work target..."
       onChange={(event) => onChange(event.target.value)}
-      className="min-h-24 resize-y"
+      className="min-h-20 resize-y rounded-none px-2 py-1.5"
     />
   );
 }
