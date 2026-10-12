@@ -54,7 +54,7 @@ export function ProjectSelector({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className="h-auto min-h-10 w-full justify-between rounded-none px-2 py-1.5 text-left font-normal"
+          className="h-auto min-h-9 w-full justify-between rounded-none px-2 py-1.5 text-left font-normal"
         >
           <span className="min-w-0">
             {selectedProject ? (
@@ -63,9 +63,6 @@ export function ProjectSelector({
               <>
                 <span className="block text-sm font-medium">
                   Select project
-                </span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Search customer, job, SO, or project
                 </span>
               </>
             )}
