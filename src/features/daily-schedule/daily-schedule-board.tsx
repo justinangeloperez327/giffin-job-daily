@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   type ChangeEvent,
+  Fragment,
   useEffect,
   useRef,
   useState,
@@ -45,7 +46,7 @@ import {
 } from "@/features/daily-schedule/logistics-fields";
 import {
   DailyTargetEditor,
-  TimingEditor,
+  TimeSelectEditor,
 } from "@/features/daily-schedule/schedule-field-editors";
 import {
   hasTimingErrors,
@@ -1113,420 +1114,519 @@ export function DailyScheduleBoard({
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 overflow-hidden border bg-card">
           <div className="overflow-x-auto">
-            <div className="min-w-[1180px]">
-              <div className="grid grid-cols-[1.3fr_1fr_1.1fr_0.58fr_0.58fr_0.58fr_1.35fr] border-b bg-muted/30">
-                {["Project", "Foreman", "Labours", "Camp", "Start", "End", "Daily Target"].map(
-                  (heading) => (
-                    <div
-                      key={heading}
-                      className="px-2 py-2 text-xs font-medium text-muted-foreground"
-                    >
-                      {heading}
-                    </div>
-                  ),
-                )}
-              </div>
+            <table className="w-full min-w-[1180px] table-fixed border-collapse">
+              <colgroup>
+                <col className="w-[22%]" />
+                <col className="w-[16%]" />
+                <col className="w-[18%]" />
+                <col className="w-[9%]" />
+                <col className="w-[9%]" />
+                <col className="w-[9%]" />
+                <col className="w-[17%]" />
+              </colgroup>
+              <thead>
+                <tr className="border-b bg-muted/30">
+                  {["Project", "Foreman", "Labours", "Camp", "Start", "End", "Daily Target"].map(
+                    (heading) => (
+                      <th
+                        key={heading}
+                        scope="col"
+                        className="px-2 py-2 text-left text-xs font-medium text-muted-foreground"
+                      >
+                        {heading}
+                      </th>
+                    ),
+                  )}
+                </tr>
+              </thead>
 
-              {initialSchedules.length === 0 && draftRows.length === 0 ? (
-                <div className="flex min-h-64 flex-col items-center justify-center px-5 text-center">
-                  <div className="mb-3 rounded-md border bg-muted/40 p-2.5">
-                    <CalendarDays className="size-5 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium">
-                    No projects scheduled for this day
-                  </p>
-                  <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    {projects.length > 0
-                      ? `Add a project row to begin planning resources for ${displayDate(selectedDate)}.`
-                      : "Add projects in the Projects module before creating a daily schedule."}
-                  </p>
-                  <Button
-                    className="mt-4"
-                    variant="outline"
-                    onClick={addDraftRow}
-                    disabled={projects.length === 0}
-                  >
-                    <Plus className="size-4" />
-                    Add Project
-                  </Button>
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {initialSchedules.map((row) => {
-                    const rowKey = savedRowKey(row.projectJobNo);
-                    const selected = selectedRowKey === rowKey;
-                    const foremanOptions = foremanOptionsFor(
-                      rowKey,
-                      row.projectJobNo,
-                      row.foremanEmployeeId,
-                    );
-                    const editableFields = editableFieldsForSaved(row);
-                    const timingErrors =
-                      validateTimingFields(editableFields);
-                    const driverOptions = driverOptionsFor(
-                      rowKey,
-                      row.projectJobNo,
-                      editableFields.driverEmployeeId,
-                      row.foremanEmployeeId,
-                      row.labourEmployeeIds,
-                    );
-                    const logisticsExpanded =
-                      expandedLogisticsRows.has(rowKey);
-                    const selectedDriver = resources.find(
-                      (resource) =>
-                        resource.employeeId ===
+              <tbody className="divide-y">
+                {initialSchedules.length === 0 && draftRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-0">
+                      <div className="flex min-h-64 flex-col items-center justify-center px-5 text-center">
+                        <div className="mb-3 border bg-muted/40 p-2.5">
+                          <CalendarDays className="size-5 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm font-medium">
+                          No projects scheduled for this day
+                        </p>
+                        <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                          {projects.length > 0
+                            ? `Add a project row to begin planning resources for ${displayDate(selectedDate)}.`
+                            : "Add projects in the Projects module before creating a daily schedule."}
+                        </p>
+                        <Button
+                          className="mt-4"
+                          variant="outline"
+                          onClick={addDraftRow}
+                          disabled={projects.length === 0}
+                        >
+                          <Plus className="size-4" />
+                          Add Project
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <>
+                    {initialSchedules.map((row) => {
+                      const rowKey = savedRowKey(row.projectJobNo);
+                      const selected = selectedRowKey === rowKey;
+                      const foremanOptions = foremanOptionsFor(
+                        rowKey,
+                        row.projectJobNo,
+                        row.foremanEmployeeId,
+                      );
+                      const editableFields = editableFieldsForSaved(row);
+                      const timingErrors = validateTimingFields(editableFields);
+                      const driverOptions = driverOptionsFor(
+                        rowKey,
+                        row.projectJobNo,
                         editableFields.driverEmployeeId,
-                    );
+                        row.foremanEmployeeId,
+                        row.labourEmployeeIds,
+                      );
+                      const logisticsExpanded =
+                        expandedLogisticsRows.has(rowKey);
+                      const selectedDriver = resources.find(
+                        (resource) =>
+                          resource.employeeId ===
+                          editableFields.driverEmployeeId,
+                      );
 
-                    return (
-                      <div
-                        key={row.projectJobNo}
-                        className={cn(
-                          "transition-colors",
-                          selected && "bg-accent/35",
-                        )}
-                      >
-                        <div
-                          onClick={() => setSelectedRowKey(rowKey)}
-                          className="grid min-h-24 cursor-pointer grid-cols-[1.3fr_1fr_1.1fr_0.58fr_0.58fr_0.58fr_1.35fr]"
-                        >
-                        <div className="relative px-2 py-2 pr-9">
-                          <button
-                            type="button"
-                            className="block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            aria-pressed={selected}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setSelectedRowKey(rowKey);
-                            }}
+                      return (
+                        <Fragment key={row.projectJobNo}>
+                          <tr
+                            onClick={() => setSelectedRowKey(rowKey)}
+                            className={cn(
+                              "cursor-pointer align-top transition-colors",
+                              selected && "bg-accent/35",
+                            )}
                           >
-                            <span className="block text-sm font-medium">
-                              {row.projectName}
-                            </span>
-                            <span className="mt-1 block text-xs text-muted-foreground">
-                              Job {row.projectJobNo} · SO {row.soNo}
-                            </span>
-                          </button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
-                            disabled={
-                              pending && deletingJobNo === row.projectJobNo
-                            }
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              removeSavedSchedule(
-                                row.projectJobNo,
-                                row.projectName,
-                              );
-                            }}
-                            aria-label={`Remove ${row.projectName} from schedule`}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-
-                        <div
-                          className="px-2 py-2"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <ForemanSelector
-                            options={foremanOptions}
-                            value={row.foremanEmployeeId}
-                            disabled={pending}
-                            onValueChange={(employeeId) =>
-                              assignForeman(rowKey, employeeId)
-                            }
-                          />
-                        </div>
-
-                        <div className="px-2 py-2">
-                          <LabourCell
-                            employeeIds={row.labourEmployeeIds}
-                            resources={resources}
-                            pending={pending}
-                            onRemove={(employeeId) =>
-                              removeLabour(rowKey, employeeId)
-                            }
-                          />
-                        </div>
-
-                        <div
-                          className="col-span-3 px-2 py-2"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <TimingEditor
-                            value={editableFields}
-                            errors={timingErrors}
-                            disabled={pending}
-                            onChange={(field, value) =>
-                              updateSavedField(row, field, value)
-                            }
-                          />
-                        </div>
-
-                        <div
-                          className="px-2 py-2"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <DailyTargetEditor
-                            value={editableFields.dailyTarget}
-                            disabled={pending}
-                            onChange={(value) =>
-                              updateSavedField(row, "dailyTarget", value)
-                            }
-                          />
-                        </div>
-                        </div>
-
-                        <div className="border-t border-dashed">
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setSelectedRowKey(rowKey);
-                              toggleLogistics(rowKey);
-                            }}
-                            className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
-                          >
-                            <span className="flex items-center gap-2 font-medium">
-                              Logistics
-                              {selectedDriver || editableFields.equipmentVehicle ? (
-                                <span className="font-normal text-muted-foreground">
-                                  {selectedDriver?.employeeName ?? "No driver"}
-                                  {editableFields.equipmentVehicle
-                                    ? ` · ${editableFields.equipmentVehicle}`
-                                    : ""}
+                            <td className="relative px-2 py-2 pr-9">
+                              <button
+                                type="button"
+                                className="block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-pressed={selected}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setSelectedRowKey(rowKey);
+                                }}
+                              >
+                                <span className="block text-sm font-medium">
+                                  {row.projectName}
                                 </span>
-                              ) : (
-                                <span className="font-normal text-muted-foreground">
-                                  Optional
+                                <span className="mt-1 block text-xs text-muted-foreground">
+                                  Job {row.projectJobNo} · SO {row.soNo}
                                 </span>
-                              )}
-                            </span>
-                            <ChevronDown
-                              className={cn(
-                                "size-4 text-muted-foreground transition-transform",
-                                logisticsExpanded && "rotate-180",
-                              )}
-                            />
-                          </button>
+                              </button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
+                                disabled={
+                                  pending &&
+                                  deletingJobNo === row.projectJobNo
+                                }
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  removeSavedSchedule(
+                                    row.projectJobNo,
+                                    row.projectName,
+                                  );
+                                }}
+                                aria-label={`Remove ${row.projectName} from schedule`}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </td>
 
-                          {logisticsExpanded ? (
-                            <div
-                              className="border-t bg-muted/10 px-2 py-2"
+                            <td
+                              className="px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
-                              <LogisticsEditor
-                                driverOptions={driverOptions}
-                                driverEmployeeId={editableFields.driverEmployeeId}
-                                equipmentVehicle={editableFields.equipmentVehicle}
+                              <ForemanSelector
+                                options={foremanOptions}
+                                value={row.foremanEmployeeId}
                                 disabled={pending}
-                                onDriverChange={(employeeId) =>
-                                  updateSavedField(
-                                    row,
-                                    "driverEmployeeId",
-                                    employeeId,
-                                  )
-                                }
-                                onEquipmentVehicleChange={(value) =>
-                                  updateSavedField(
-                                    row,
-                                    "equipmentVehicle",
-                                    value,
-                                  )
+                                onValueChange={(employeeId) =>
+                                  assignForeman(rowKey, employeeId)
                                 }
                               />
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })}
+                            </td>
 
-                  {draftRows.map((row) => {
-                    const selected = selectedRowKey === row.id;
-                    const foremanOptions = foremanOptionsFor(
-                      row.id,
-                      row.projectJobNo,
-                      row.foremanEmployeeId,
-                    );
-                    const timingErrors = validateTimingFields(row);
-                    const driverOptions = driverOptionsFor(
-                      row.id,
-                      row.projectJobNo,
-                      row.driverEmployeeId,
-                      row.foremanEmployeeId,
-                      row.labourEmployeeIds,
-                    );
-                    const logisticsExpanded =
-                      expandedLogisticsRows.has(row.id);
-                    const selectedDriver = resources.find(
-                      (resource) =>
-                        resource.employeeId === row.driverEmployeeId,
-                    );
+                            <td className="px-2 py-2">
+                              <LabourCell
+                                employeeIds={row.labourEmployeeIds}
+                                resources={resources}
+                                pending={pending}
+                                onRemove={(employeeId) =>
+                                  removeLabour(rowKey, employeeId)
+                                }
+                              />
+                            </td>
 
-                    return (
-                      <div
-                        key={row.id}
-                        className={cn(
-                          "bg-muted/10 transition-colors",
-                          selected && "bg-accent/35",
-                        )}
-                      >
-                        <div
-                          onClick={() => setSelectedRowKey(row.id)}
-                          className="grid min-h-24 cursor-pointer grid-cols-[1.3fr_1fr_1.1fr_0.58fr_0.58fr_0.58fr_1.35fr]"
-                        >
-                        <div
-                          className="relative px-2 py-2 pr-9"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <ProjectSelector
-                            projects={projects}
-                            value={row.projectJobNo}
-                            disabledJobNos={blockedProjectJobNos(row.id)}
-                            onValueChange={(jobNo) =>
-                              selectDraftProject(row.id, jobNo)
-                            }
-                            disabled={pending}
-                            error={projectError}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
-                            disabled={pending}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              removeDraftRow(row.id);
-                            }}
-                            aria-label="Remove draft schedule row"
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-
-                        <div
-                          className="px-2 py-2"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <ForemanSelector
-                            options={foremanOptions}
-                            value={row.foremanEmployeeId}
-                            disabled={!row.projectJobNo || pending}
-                            onValueChange={(employeeId) =>
-                              assignForeman(row.id, employeeId)
-                            }
-                          />
-                        </div>
-
-                        <div className="px-2 py-2">
-                          <LabourCell
-                            employeeIds={row.labourEmployeeIds}
-                            resources={resources}
-                            pending={pending}
-                            onRemove={(employeeId) =>
-                              removeLabour(row.id, employeeId)
-                            }
-                          />
-                        </div>
-
-                        <div
-                          className="col-span-3 px-2 py-2"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <TimingEditor
-                            value={row}
-                            errors={timingErrors}
-                            disabled={pending}
-                            onChange={(field, value) =>
-                              updateDraftField(row.id, field, value)
-                            }
-                          />
-                        </div>
-                        <div
-                          className="px-2 py-2"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <DailyTargetEditor
-                            value={row.dailyTarget}
-                            disabled={pending}
-                            onChange={(value) =>
-                              updateDraftField(row.id, "dailyTarget", value)
-                            }
-                          />
-                        </div>
-                        </div>
-
-                        <div className="border-t border-dashed">
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setSelectedRowKey(row.id);
-                              toggleLogistics(row.id);
-                            }}
-                            className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
-                          >
-                            <span className="flex items-center gap-2 font-medium">
-                              Logistics
-                              {selectedDriver || row.equipmentVehicle ? (
-                                <span className="font-normal text-muted-foreground">
-                                  {selectedDriver?.employeeName ?? "No driver"}
-                                  {row.equipmentVehicle
-                                    ? ` · ${row.equipmentVehicle}`
-                                    : ""}
-                                </span>
-                              ) : (
-                                <span className="font-normal text-muted-foreground">
-                                  Optional
-                                </span>
-                              )}
-                            </span>
-                            <ChevronDown
-                              className={cn(
-                                "size-4 text-muted-foreground transition-transform",
-                                logisticsExpanded && "rotate-180",
-                              )}
-                            />
-                          </button>
-
-                          {logisticsExpanded ? (
-                            <div
-                              className="border-t bg-background/40 px-2 py-2"
+                            <td
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
-                              <LogisticsEditor
-                                driverOptions={driverOptions}
-                                driverEmployeeId={row.driverEmployeeId}
-                                equipmentVehicle={row.equipmentVehicle}
-                                disabled={!row.projectJobNo || pending}
-                                onDriverChange={(employeeId) =>
-                                  updateDraftField(
-                                    row.id,
-                                    "driverEmployeeId",
-                                    employeeId,
-                                  )
+                              <TimeSelectEditor
+                                value={editableFields.campStartTime}
+                                error={timingErrors.campStartTime}
+                                disabled={pending}
+                                ariaLabel="Camp start time"
+                                onChange={(value) =>
+                                  updateSavedField(row, "campStartTime", value)
                                 }
-                                onEquipmentVehicleChange={(value) =>
+                              />
+                            </td>
+
+                            <td
+                              className="px-1.5 py-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <TimeSelectEditor
+                                value={editableFields.startTime}
+                                error={timingErrors.startTime}
+                                disabled={pending}
+                                ariaLabel="Start time"
+                                onChange={(value) =>
+                                  updateSavedField(row, "startTime", value)
+                                }
+                              />
+                            </td>
+
+                            <td
+                              className="px-1.5 py-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <TimeSelectEditor
+                                value={editableFields.endTime}
+                                error={timingErrors.endTime}
+                                disabled={pending}
+                                ariaLabel="End time"
+                                onChange={(value) =>
+                                  updateSavedField(row, "endTime", value)
+                                }
+                              />
+                            </td>
+
+                            <td
+                              className="px-2 py-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <DailyTargetEditor
+                                value={editableFields.dailyTarget}
+                                disabled={pending}
+                                onChange={(value) =>
+                                  updateSavedField(row, "dailyTarget", value)
+                                }
+                              />
+                            </td>
+                          </tr>
+
+                          <tr className={cn(selected && "bg-accent/20")}>
+                            <td colSpan={7} className="border-t border-dashed p-0">
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setSelectedRowKey(rowKey);
+                                  toggleLogistics(rowKey);
+                                }}
+                                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
+                              >
+                                <span className="flex items-center gap-2 font-medium">
+                                  Logistics
+                                  {selectedDriver ||
+                                  editableFields.equipmentVehicle ? (
+                                    <span className="font-normal text-muted-foreground">
+                                      {selectedDriver?.employeeName ??
+                                        "No driver"}
+                                      {editableFields.equipmentVehicle
+                                        ? ` · ${editableFields.equipmentVehicle}`
+                                        : ""}
+                                    </span>
+                                  ) : (
+                                    <span className="font-normal text-muted-foreground">
+                                      Optional
+                                    </span>
+                                  )}
+                                </span>
+                                <ChevronDown
+                                  className={cn(
+                                    "size-4 text-muted-foreground transition-transform",
+                                    logisticsExpanded && "rotate-180",
+                                  )}
+                                />
+                              </button>
+
+                              {logisticsExpanded ? (
+                                <div
+                                  className="border-t bg-muted/10 px-2 py-2"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  <LogisticsEditor
+                                    driverOptions={driverOptions}
+                                    driverEmployeeId={
+                                      editableFields.driverEmployeeId
+                                    }
+                                    equipmentVehicle={
+                                      editableFields.equipmentVehicle
+                                    }
+                                    disabled={pending}
+                                    onDriverChange={(employeeId) =>
+                                      updateSavedField(
+                                        row,
+                                        "driverEmployeeId",
+                                        employeeId,
+                                      )
+                                    }
+                                    onEquipmentVehicleChange={(value) =>
+                                      updateSavedField(
+                                        row,
+                                        "equipmentVehicle",
+                                        value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              ) : null}
+                            </td>
+                          </tr>
+                        </Fragment>
+                      );
+                    })}
+
+                    {draftRows.map((row) => {
+                      const selected = selectedRowKey === row.id;
+                      const foremanOptions = foremanOptionsFor(
+                        row.id,
+                        row.projectJobNo,
+                        row.foremanEmployeeId,
+                      );
+                      const timingErrors = validateTimingFields(row);
+                      const driverOptions = driverOptionsFor(
+                        row.id,
+                        row.projectJobNo,
+                        row.driverEmployeeId,
+                        row.foremanEmployeeId,
+                        row.labourEmployeeIds,
+                      );
+                      const logisticsExpanded =
+                        expandedLogisticsRows.has(row.id);
+                      const selectedDriver = resources.find(
+                        (resource) =>
+                          resource.employeeId === row.driverEmployeeId,
+                      );
+
+                      return (
+                        <Fragment key={row.id}>
+                          <tr
+                            onClick={() => setSelectedRowKey(row.id)}
+                            className={cn(
+                              "cursor-pointer bg-muted/10 align-top transition-colors",
+                              selected && "bg-accent/35",
+                            )}
+                          >
+                            <td
+                              className="relative px-2 py-2 pr-9"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <ProjectSelector
+                                projects={projects}
+                                value={row.projectJobNo}
+                                disabledJobNos={blockedProjectJobNos(row.id)}
+                                onValueChange={(jobNo) =>
+                                  selectDraftProject(row.id, jobNo)
+                                }
+                                disabled={pending}
+                                error={projectError}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
+                                disabled={pending}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  removeDraftRow(row.id);
+                                }}
+                                aria-label="Remove draft schedule row"
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </td>
+
+                            <td
+                              className="px-2 py-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <ForemanSelector
+                                options={foremanOptions}
+                                value={row.foremanEmployeeId}
+                                disabled={!row.projectJobNo || pending}
+                                onValueChange={(employeeId) =>
+                                  assignForeman(row.id, employeeId)
+                                }
+                              />
+                            </td>
+
+                            <td className="px-2 py-2">
+                              <LabourCell
+                                employeeIds={row.labourEmployeeIds}
+                                resources={resources}
+                                pending={pending}
+                                onRemove={(employeeId) =>
+                                  removeLabour(row.id, employeeId)
+                                }
+                              />
+                            </td>
+
+                            <td
+                              className="px-1.5 py-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <TimeSelectEditor
+                                value={row.campStartTime}
+                                error={timingErrors.campStartTime}
+                                disabled={pending}
+                                ariaLabel="Camp start time"
+                                onChange={(value) =>
                                   updateDraftField(
                                     row.id,
-                                    "equipmentVehicle",
+                                    "campStartTime",
                                     value,
                                   )
                                 }
                               />
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                            </td>
+
+                            <td
+                              className="px-1.5 py-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <TimeSelectEditor
+                                value={row.startTime}
+                                error={timingErrors.startTime}
+                                disabled={pending}
+                                ariaLabel="Start time"
+                                onChange={(value) =>
+                                  updateDraftField(row.id, "startTime", value)
+                                }
+                              />
+                            </td>
+
+                            <td
+                              className="px-1.5 py-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <TimeSelectEditor
+                                value={row.endTime}
+                                error={timingErrors.endTime}
+                                disabled={pending}
+                                ariaLabel="End time"
+                                onChange={(value) =>
+                                  updateDraftField(row.id, "endTime", value)
+                                }
+                              />
+                            </td>
+
+                            <td
+                              className="px-2 py-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <DailyTargetEditor
+                                value={row.dailyTarget}
+                                disabled={pending}
+                                onChange={(value) =>
+                                  updateDraftField(
+                                    row.id,
+                                    "dailyTarget",
+                                    value,
+                                  )
+                                }
+                              />
+                            </td>
+                          </tr>
+
+                          <tr
+                            className={cn(
+                              "bg-muted/10",
+                              selected && "bg-accent/20",
+                            )}
+                          >
+                            <td colSpan={7} className="border-t border-dashed p-0">
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setSelectedRowKey(row.id);
+                                  toggleLogistics(row.id);
+                                }}
+                                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
+                              >
+                                <span className="flex items-center gap-2 font-medium">
+                                  Logistics
+                                  {selectedDriver || row.equipmentVehicle ? (
+                                    <span className="font-normal text-muted-foreground">
+                                      {selectedDriver?.employeeName ??
+                                        "No driver"}
+                                      {row.equipmentVehicle
+                                        ? ` · ${row.equipmentVehicle}`
+                                        : ""}
+                                    </span>
+                                  ) : (
+                                    <span className="font-normal text-muted-foreground">
+                                      Optional
+                                    </span>
+                                  )}
+                                </span>
+                                <ChevronDown
+                                  className={cn(
+                                    "size-4 text-muted-foreground transition-transform",
+                                    logisticsExpanded && "rotate-180",
+                                  )}
+                                />
+                              </button>
+
+                              {logisticsExpanded ? (
+                                <div
+                                  className="border-t bg-background/40 px-2 py-2"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  <LogisticsEditor
+                                    driverOptions={driverOptions}
+                                    driverEmployeeId={row.driverEmployeeId}
+                                    equipmentVehicle={row.equipmentVehicle}
+                                    disabled={!row.projectJobNo || pending}
+                                    onDriverChange={(employeeId) =>
+                                      updateDraftField(
+                                        row.id,
+                                        "driverEmployeeId",
+                                        employeeId,
+                                      )
+                                    }
+                                    onEquipmentVehicleChange={(value) =>
+                                      updateDraftField(
+                                        row.id,
+                                        "equipmentVehicle",
+                                        value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              ) : null}
+                            </td>
+                          </tr>
+                        </Fragment>
+                      );
+                    })}
+                  </>
+                )}
+              </tbody>
+            </table>
           </div>
 
           <div className="flex flex-col gap-1.5 border-t px-2 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
