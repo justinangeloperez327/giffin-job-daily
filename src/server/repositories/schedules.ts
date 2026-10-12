@@ -76,3 +76,30 @@ export async function listDailyScheduleLabours(
     },
   });
 }
+
+
+export async function listRecentDailySchedules(takeDates = 30) {
+  const dates = await prisma.dailySchedule.findMany({
+    distinct: ["scheduleDate"],
+    select: { scheduleDate: true },
+    orderBy: { scheduleDate: "desc" },
+    take: takeDates,
+  });
+
+  if (dates.length === 0) {
+    return [];
+  }
+
+  return prisma.dailySchedule.findMany({
+    where: {
+      scheduleDate: {
+        in: dates.map((item) => item.scheduleDate),
+      },
+    },
+    include: scheduleInclude,
+    orderBy: [
+      { scheduleDate: "desc" },
+      { project: { projectName: "asc" } },
+    ],
+  });
+}
