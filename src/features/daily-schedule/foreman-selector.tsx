@@ -66,10 +66,7 @@ export function ForemanSelector({
             ) : (
               <>
                 <span className="block text-sm font-medium">
-                  Select foreman
-                </span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Search name or employee ID
+                  Assign foreman
                 </span>
               </>
             )}

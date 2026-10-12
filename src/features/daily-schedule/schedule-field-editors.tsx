@@ -72,9 +72,9 @@ export function DailyTargetEditor({
       disabled={disabled}
       maxLength={5000}
       rows={2}
-      placeholder="Daily work target..."
+      placeholder="Add target..."
       onChange={(event) => onChange(event.target.value)}
-      className="min-h-14 resize-y rounded-none px-2 py-1.5"
+      className="min-h-9 resize-y rounded-none px-2 py-1.5 text-sm focus:min-h-24"
     />
   );
 }

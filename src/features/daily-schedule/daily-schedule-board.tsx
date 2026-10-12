@@ -2,12 +2,10 @@
 
 import {
   CalendarDays,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Plus,
   Save,
-  Trash2,
   UsersRound,
   X,
 } from "lucide-react";
@@ -61,6 +59,7 @@ import {
   type ScheduleProjectOption,
 } from "@/features/daily-schedule/project-selector";
 import { ResourcePoolPanel } from "@/features/daily-schedule/resource-pool";
+import { ScheduleRowActions } from "@/features/daily-schedule/schedule-row-actions";
 import { shiftScheduleDate } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 
@@ -133,38 +132,49 @@ function LabourCell({
   employeeIds,
   resources,
   pending,
+  disabled,
   onRemove,
+  onManage,
 }: {
   employeeIds: string[];
   resources: ScheduleResource[];
   pending: boolean;
+  disabled?: boolean;
   onRemove: (employeeId: string) => void;
+  onManage: () => void;
 }) {
-  const visible = employeeIds.slice(0, 3);
+  const visible = employeeIds.slice(0, 2);
 
   return (
-    <div>
-      <p className="text-sm font-medium">
-        {employeeIds.length} assigned
-      </p>
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-sm font-medium tabular-nums">
+          {employeeIds.length} assigned
+        </span>
+        <button
+          type="button"
+          disabled={disabled || pending}
+          onClick={(event) => {
+            event.stopPropagation();
+            onManage();
+          }}
+          className="h-7 shrink-0 px-1.5 text-xs font-medium text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50"
+          aria-label={`Manage labour assignments (${employeeIds.length} assigned)`}
+        >
+          {employeeIds.length > 0 ? "Manage" : "Assign"}
+        </button>
+      </div>
 
-      {employeeIds.length === 0 ? (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Select this row and use the Labour pool.
-        </p>
-      ) : (
-        <div className="mt-1.5 space-y-1">
+      {visible.length > 0 ? (
+        <div className="space-y-0.5">
           {visible.map((employeeId) => {
             const resource = resources.find(
               (item) => item.employeeId === employeeId,
             );
 
             return (
-              <div
-                key={employeeId}
-                className="flex items-center justify-between gap-2 bg-muted/60 px-2 py-1"
-              >
-                <span className="min-w-0 truncate text-xs">
+              <div key={employeeId} className="flex items-center justify-between gap-1">
+                <span className="min-w-0 truncate text-xs text-muted-foreground">
                   {resource?.employeeName ?? employeeId}
                 </span>
                 <button
@@ -174,7 +184,7 @@ function LabourCell({
                     event.stopPropagation();
                     onRemove(employeeId);
                   }}
-                  className="flex size-6 shrink-0 items-center justify-center text-muted-foreground hover:bg-background hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+                  className="flex size-6 shrink-0 items-center justify-center text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
                   aria-label={`Remove ${resource?.employeeName ?? employeeId}`}
                 >
                   <X className="size-3" />
@@ -182,14 +192,13 @@ function LabourCell({
               </div>
             );
           })}
-
           {employeeIds.length > visible.length ? (
-            <p className="px-1 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               +{employeeIds.length - visible.length} more
             </p>
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -225,6 +234,8 @@ export function DailyScheduleBoard({
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(
     firstSavedKey,
   );
+  const [resourcePoolOpen, setResourcePoolOpen] = useState(false);
+  const [poolTab, setPoolTab] = useState<"foremen" | "labours">("foremen");
   const [deletingJobNo, setDeletingJobNo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const dirtySavedCount = Object.keys(savedEdits).length;
@@ -240,6 +251,8 @@ export function DailyScheduleBoard({
     setSavedEdits({});
     setExpandedLogisticsRows(new Set());
     setSelectedRowKey(firstSavedKey);
+    setResourcePoolOpen(false);
+    setPoolTab("foremen");
   }, [selectedDate, firstSavedKey]);
 
   useEffect(() => {
@@ -934,6 +947,15 @@ export function DailyScheduleBoard({
     });
   }
 
+  function openResourcePool(rowKey: string, tab: "foremen" | "labours") {
+    setSelectedRowKey(rowKey);
+    setPoolTab(tab);
+
+    if (window.matchMedia("(max-width: 1279px)").matches) {
+      setResourcePoolOpen(true);
+    }
+  }
+
   const selectedProjectJobNo = selectedProjectForRow(selectedRowKey);
   const selectedForemanId = selectedForemanForRow(selectedRowKey);
   const selectedLabourIds = selectedLaboursForRow(selectedRowKey);
@@ -1041,7 +1063,7 @@ export function DailyScheduleBoard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Sheet>
+          <Sheet open={resourcePoolOpen} onOpenChange={setResourcePoolOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" className="xl:hidden">
                 <UsersRound className="size-4" />
@@ -1054,6 +1076,8 @@ export function DailyScheduleBoard({
               </SheetHeader>
               <ResourcePoolPanel
                 contextKey={selectedRowKey ?? undefined}
+                 activeTab={poolTab}
+                 onTabChange={setPoolTab}
                 totalEmployees={resources.length}
                 error={resourceError}
                 selectedLabel={selectedLabel}
@@ -1114,38 +1138,62 @@ export function DailyScheduleBoard({
       ) : null}
 
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 overflow-hidden border border-dashed bg-card">
+        <div className="min-w-0 overflow-hidden border bg-card">
           <div className="overflow-x-auto">
-            <table aria-label="Daily workforce planning sheet" className="w-full min-w-[1280px] table-fixed border-collapse">
+            <table aria-label="Daily workforce planning sheet" className="w-full min-w-[1480px] table-fixed border-collapse text-sm">
               <colgroup>
-                <col className="w-[26%]" />
+                <col className="w-[27%]" />
                 <col className="w-[16%]" />
-                <col className="w-[18%]" />
-                <col className="w-[9%]" />
-                <col className="w-[9%]" />
-                <col className="w-[9%]" />
-                <col className="w-[13%]" />
+                <col className="w-[14%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[14%]" />
+                <col className="w-[5%]" />
               </colgroup>
-              <thead>
-                <tr className="border-b border-dashed bg-muted/30">
-                  {["Project Details", "Foreman", "Labours", "Camp", "Start", "End", "Daily Target"].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        scope="col"
-                        className="border-r border-dashed px-2 py-2 text-left text-xs font-medium text-muted-foreground last:border-r-0"
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
+              <thead className="bg-muted/50">
+                <tr className="border-b border-border/60">
+                  {["Project Details", "Foreman", "Labours"].map((heading) => (
+                    <th
+                      key={heading}
+                      rowSpan={2}
+                      scope="col"
+                      className="px-2 py-2 text-left align-middle text-xs font-medium text-muted-foreground"
+                    >
+                      {heading}
+                    </th>
+                  ))}
+                  <th
+                    colSpan={3}
+                    scope="colgroup"
+                    className="border-x border-border/60 px-1 py-1 text-center text-xs font-medium text-muted-foreground"
+                  >
+                    Timing
+                  </th>
+                  <th rowSpan={2} scope="col" className="px-2 py-2 text-left align-middle text-xs font-medium text-muted-foreground">
+                    Daily Target
+                  </th>
+                  <th rowSpan={2} scope="col" className="px-1 py-2 text-center align-middle text-xs font-medium text-muted-foreground">
+                    Actions
+                  </th>
+                </tr>
+                <tr className="border-b border-border/70">
+                  {["Camp", "Start", "End"].map((heading) => (
+                    <th
+                      key={heading}
+                      scope="col"
+                      className="border-x border-border/30 px-1 py-1.5 text-left text-xs font-medium text-muted-foreground"
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-dashed">
+              <tbody className="divide-y divide-border/70">
                 {initialSchedules.length === 0 && draftRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-0">
+                    <td colSpan={8} className="p-0">
                       <div className="flex min-h-36 flex-col items-center justify-center px-5 text-center">
                         <div className="mb-3 border bg-muted/40 p-2.5">
                           <CalendarDays className="size-5 text-muted-foreground" />
@@ -1203,11 +1251,11 @@ export function DailyScheduleBoard({
                             onClick={() => setSelectedRowKey(rowKey)}
                             onFocus={() => setSelectedRowKey(rowKey)}
                             className={cn(
-                              "cursor-pointer align-top transition-colors",
+                              "cursor-pointer align-top transition-colors hover:bg-muted/30",
                               selected && "bg-accent/35",
                             )}
                           >
-                            <td className="relative border-r border-dashed px-2 py-2 pr-9">
+                            <td className={cn("border-l-2 border-transparent px-2 py-2", selected && "border-l-primary")}>
                               <button
                                 type="button"
                                 className="block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1226,29 +1274,11 @@ export function DailyScheduleBoard({
                                   }}
                                 />
                               </button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
-                                disabled={
-                                  pending &&
-                                  deletingJobNo === row.projectJobNo
-                                }
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  removeSavedSchedule(
-                                    row.projectJobNo,
-                                    row.projectName,
-                                  );
-                                }}
-                                aria-label={`Remove ${row.projectName} from schedule`}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
+                              
                             </td>
 
                             <td
-                              className="border-r border-dashed px-2 py-2"
+                              className="px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <ForemanSelector
@@ -1261,11 +1291,12 @@ export function DailyScheduleBoard({
                               />
                             </td>
 
-                            <td className="border-r border-dashed px-2 py-2">
+                            <td className="px-2 py-2">
                               <LabourCell
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
                                 pending={pending}
+                                 onManage={() => openResourcePool(rowKey, "labours")}
                                 onRemove={(employeeId) =>
                                   removeLabour(rowKey, employeeId)
                                 }
@@ -1273,7 +1304,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1288,7 +1319,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1303,7 +1334,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1329,50 +1360,34 @@ export function DailyScheduleBoard({
                                 }
                               />
                             </td>
-                          </tr>
-
-                          <tr className={cn(selected && "bg-accent/20")}>
-                            <td colSpan={7} className="border-t border-dashed p-0">
-                              <button
-                                type="button"
-                                aria-expanded={logisticsExpanded}
-                                onClick={(event) => {
-                                  event.stopPropagation();
+                            <td className="px-1 py-2" onClick={(event) => event.stopPropagation()}>
+                              <ScheduleRowActions
+                                logisticsExpanded={logisticsExpanded}
+                                hasLogistics={Boolean(selectedDriver || editableFields.equipmentVehicle)}
+                                onToggleLogistics={() => {
                                   setSelectedRowKey(rowKey);
                                   toggleLogistics(rowKey);
                                 }}
-                                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
-                              >
-                                <span className="flex items-center gap-2 font-medium">
-                                  Logistics
-                                  {selectedDriver ||
-                                  editableFields.equipmentVehicle ? (
-                                    <span className="font-normal text-muted-foreground">
-                                      {selectedDriver?.employeeName ??
-                                        "No driver"}
-                                      {editableFields.equipmentVehicle
-                                        ? ` · ${editableFields.equipmentVehicle}`
-                                        : ""}
-                                    </span>
-                                  ) : (
-                                    <span className="font-normal text-muted-foreground">
-                                      Optional
-                                    </span>
-                                  )}
-                                </span>
-                                <ChevronDown
-                                  className={cn(
-                                    "size-4 text-muted-foreground transition-transform",
-                                    logisticsExpanded && "rotate-180",
-                                  )}
-                                />
-                              </button>
+                                onRemove={() => {
+                                  removeSavedSchedule(row.projectJobNo, row.projectName);
+                                }}
+                                removeDisabled={pending && deletingJobNo === row.projectJobNo}
+                                removeLabel={`Remove ${row.projectName} from schedule`}
+                              />
+                            </td>
+                          </tr>
 
-                              {logisticsExpanded ? (
-                                <div
-                                  className="border-t bg-muted/10 px-2 py-2"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
+                          {logisticsExpanded ? (
+                            <tr className="bg-muted/20">
+                              <td colSpan={8} className="border-t border-border/70 p-3">
+                                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+                                  <span className="font-medium">Logistics</span>
+                                  <span className="text-muted-foreground">
+                                    {selectedDriver?.employeeName ?? "No driver"}
+                                    {editableFields.equipmentVehicle ? ` · ${editableFields.equipmentVehicle}` : ""}
+                                  </span>
+                                </div>
+                                <div onClick={(event) => event.stopPropagation()}>
                                   <LogisticsEditor
                                     driverOptions={driverOptions}
                                     driverEmployeeId={
@@ -1398,9 +1413,9 @@ export function DailyScheduleBoard({
                                     }
                                   />
                                 </div>
-                              ) : null}
-                            </td>
-                          </tr>
+                              </td>
+                            </tr>
+                          ) : null}
                         </Fragment>
                       );
                     })}
@@ -1433,15 +1448,13 @@ export function DailyScheduleBoard({
                             onClick={() => setSelectedRowKey(row.id)}
                             onFocus={() => setSelectedRowKey(row.id)}
                             className={cn(
-                              "cursor-pointer bg-muted/10 align-top transition-colors",
+                              "cursor-pointer align-top transition-colors hover:bg-muted/30",
                               selected && "bg-accent/35",
                             )}
                           >
                             <td
-                              className="relative border-r border-dashed px-2 py-2 pr-9"
-                              onClick={(event) => event.stopPropagation()}
+                              className={cn("border-l-2 border-transparent px-2 py-2", selected && "border-l-primary")}
                             >
-                              <button type="button" aria-pressed={selected} onClick={() => setSelectedRowKey(row.id)} className="mb-1 text-xs text-muted-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring">{selected ? "Resource pool selected" : "Select for resource pool"}</button>
                               <ProjectSelector
                                 projects={projects}
                                 value={row.projectJobNo}
@@ -1452,23 +1465,11 @@ export function DailyScheduleBoard({
                                 disabled={pending}
                                 error={projectError}
                               />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
-                                disabled={pending}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  removeDraftRow(row.id);
-                                }}
-                                aria-label="Remove draft schedule row"
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
+                              
                             </td>
 
                             <td
-                              className="border-r border-dashed px-2 py-2"
+                              className="px-2 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <ForemanSelector
@@ -1481,11 +1482,13 @@ export function DailyScheduleBoard({
                               />
                             </td>
 
-                            <td className="border-r border-dashed px-2 py-2">
+                            <td className="px-2 py-2">
                               <LabourCell
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
                                 pending={pending}
+                                 disabled={!row.projectJobNo}
+                                 onManage={() => openResourcePool(row.id, "labours")}
                                 onRemove={(employeeId) =>
                                   removeLabour(row.id, employeeId)
                                 }
@@ -1493,7 +1496,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1512,7 +1515,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1527,7 +1530,7 @@ export function DailyScheduleBoard({
                             </td>
 
                             <td
-                              className="border-r border-dashed px-1.5 py-2"
+                              className="px-1.5 py-2"
                               onClick={(event) => event.stopPropagation()}
                             >
                               <TimeSelectEditor
@@ -1557,54 +1560,34 @@ export function DailyScheduleBoard({
                                 }
                               />
                             </td>
-                          </tr>
-
-                          <tr
-                            className={cn(
-                              "bg-muted/10",
-                              selected && "bg-accent/20",
-                            )}
-                          >
-                            <td colSpan={7} className="border-t border-dashed p-0">
-                              <button
-                                type="button"
-                                aria-expanded={logisticsExpanded}
-                                onClick={(event) => {
-                                  event.stopPropagation();
+                            <td className="px-1 py-2" onClick={(event) => event.stopPropagation()}>
+                              <ScheduleRowActions
+                                logisticsExpanded={logisticsExpanded}
+                                hasLogistics={Boolean(selectedDriver || row.equipmentVehicle)}
+                                onToggleLogistics={() => {
                                   setSelectedRowKey(row.id);
                                   toggleLogistics(row.id);
                                 }}
-                                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted/40"
-                              >
-                                <span className="flex items-center gap-2 font-medium">
-                                  Logistics
-                                  {selectedDriver || row.equipmentVehicle ? (
-                                    <span className="font-normal text-muted-foreground">
-                                      {selectedDriver?.employeeName ??
-                                        "No driver"}
-                                      {row.equipmentVehicle
-                                        ? ` · ${row.equipmentVehicle}`
-                                        : ""}
-                                    </span>
-                                  ) : (
-                                    <span className="font-normal text-muted-foreground">
-                                      Optional
-                                    </span>
-                                  )}
-                                </span>
-                                <ChevronDown
-                                  className={cn(
-                                    "size-4 text-muted-foreground transition-transform",
-                                    logisticsExpanded && "rotate-180",
-                                  )}
-                                />
-                              </button>
+                                onRemove={() => {
+                                  removeDraftRow(row.id);
+                                }}
+                                removeDisabled={pending}
+                                removeLabel={"Remove draft schedule row"}
+                              />
+                            </td>
+                          </tr>
 
-                              {logisticsExpanded ? (
-                                <div
-                                  className="border-t bg-background/40 px-2 py-2"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
+                          {logisticsExpanded ? (
+                            <tr className="bg-muted/20">
+                              <td colSpan={8} className="border-t border-border/70 p-3">
+                                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+                                  <span className="font-medium">Logistics</span>
+                                  <span className="text-muted-foreground">
+                                    {selectedDriver?.employeeName ?? "No driver"}
+                                    {row.equipmentVehicle ? ` · ${row.equipmentVehicle}` : ""}
+                                  </span>
+                                </div>
+                                <div onClick={(event) => event.stopPropagation()}>
                                   <LogisticsEditor
                                     driverOptions={driverOptions}
                                     driverEmployeeId={row.driverEmployeeId}
@@ -1626,9 +1609,9 @@ export function DailyScheduleBoard({
                                     }
                                   />
                                 </div>
-                              ) : null}
-                            </td>
-                          </tr>
+                              </td>
+                            </tr>
+                          ) : null}
                         </Fragment>
                       );
                     })}
@@ -1661,6 +1644,8 @@ export function DailyScheduleBoard({
         <aside className="sticky top-[4.5rem] hidden h-[calc(100vh-6.5rem)] overflow-hidden border bg-card xl:block">
           <ResourcePoolPanel
             contextKey={selectedRowKey ?? undefined}
+                 activeTab={poolTab}
+                 onTabChange={setPoolTab}
             totalEmployees={resources.length}
             error={resourceError}
             selectedLabel={selectedLabel}
