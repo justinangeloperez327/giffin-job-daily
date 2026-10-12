@@ -1275,25 +1275,7 @@ export function DailyScheduleBoard({
                                   }}
                                 />
                               </button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
-                                disabled={
-                                  pending &&
-                                  deletingJobNo === row.projectJobNo
-                                }
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  removeSavedSchedule(
-                                    row.projectJobNo,
-                                    row.projectName,
-                                  );
-                                }}
-                                aria-label={`Remove ${row.projectName} from schedule`}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
+                              
                             </td>
 
                             <td
@@ -1315,6 +1297,7 @@ export function DailyScheduleBoard({
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
                                 pending={pending}
+                                 onManage={() => openResourcePool(rowKey, "labours")}
                                 onRemove={(employeeId) =>
                                   removeLabour(rowKey, employeeId)
                                 }
@@ -1377,6 +1360,44 @@ export function DailyScheduleBoard({
                                   updateSavedField(row, "dailyTarget", value)
                                 }
                               />
+                            </td>
+                            <td className="px-1 py-2" onClick={(event) => event.stopPropagation()}>
+                              <div className="flex flex-col items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-muted-foreground hover:text-foreground"
+                                  aria-expanded={logisticsExpanded}
+                                  aria-label={logisticsExpanded ? "Hide project logistics" : "Edit project logistics"}
+                                  title="Logistics"
+                                  onClick={() => {
+                                    setSelectedRowKey(rowKey);
+                                    toggleLogistics(rowKey);
+                                  }}
+                                >
+                                  <Truck className="size-4" />
+                                </Button>
+                                <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-muted-foreground hover:text-destructive"
+                                disabled={
+                                  pending &&
+                                  deletingJobNo === row.projectJobNo
+                                }
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  removeSavedSchedule(
+                                    row.projectJobNo,
+                                    row.projectName,
+                                  );
+                                }}
+                                aria-label={`Remove ${row.projectName} from schedule`}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                              </div>
                             </td>
                           </tr>
 
@@ -1501,19 +1522,7 @@ export function DailyScheduleBoard({
                                 disabled={pending}
                                 error={projectError}
                               />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-0.5 top-0.5 size-7 text-muted-foreground hover:text-destructive"
-                                disabled={pending}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  removeDraftRow(row.id);
-                                }}
-                                aria-label="Remove draft schedule row"
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
+                              
                             </td>
 
                             <td
@@ -1535,6 +1544,8 @@ export function DailyScheduleBoard({
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
                                 pending={pending}
+                                 disabled={!row.projectJobNo}
+                                 onManage={() => openResourcePool(row.id, "labours")}
                                 onRemove={(employeeId) =>
                                   removeLabour(row.id, employeeId)
                                 }
@@ -1605,6 +1616,38 @@ export function DailyScheduleBoard({
                                   )
                                 }
                               />
+                            </td>
+                            <td className="px-1 py-2" onClick={(event) => event.stopPropagation()}>
+                              <div className="flex flex-col items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-muted-foreground hover:text-foreground"
+                                  aria-expanded={logisticsExpanded}
+                                  aria-label={logisticsExpanded ? "Hide project logistics" : "Edit project logistics"}
+                                  title="Logistics"
+                                  onClick={() => {
+                                    setSelectedRowKey(row.id);
+                                    toggleLogistics(row.id);
+                                  }}
+                                >
+                                  <Truck className="size-4" />
+                                </Button>
+                                <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-muted-foreground hover:text-destructive"
+                                disabled={pending}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  removeDraftRow(row.id);
+                                }}
+                                aria-label="Remove draft schedule row"
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                              </div>
                             </td>
                           </tr>
 
