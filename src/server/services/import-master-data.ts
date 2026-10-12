@@ -19,6 +19,7 @@ import {
 
 type ProjectColumn =
   | "projectName"
+  | "customerName"
   | "jobNo"
   | "soNo";
 
@@ -41,6 +42,19 @@ const projectColumns: readonly ImportColumn<ProjectColumn>[] = [
     label: "Project Name",
     required: true,
     aliases: ["project_name", "project", "projectname"],
+  },
+  {
+    key: "customerName",
+    label: "Client / Customer",
+    required: true,
+    aliases: [
+      "customer_name",
+      "customer",
+      "client",
+      "client_name",
+      "customer name",
+      "client name",
+    ],
   },
   {
     key: "jobNo",
@@ -185,6 +199,7 @@ export async function importProjectsWorkbook(
       rowNumber: number;
       data: {
         projectName: string;
+        customerName: string;
         jobNo: string;
         soNo: string;
       };
@@ -237,6 +252,7 @@ export async function importProjectsWorkbook(
             create: row.data,
             update: {
               projectName: row.data.projectName,
+              customerName: row.data.customerName,
               soNo: row.data.soNo,
             },
           });
