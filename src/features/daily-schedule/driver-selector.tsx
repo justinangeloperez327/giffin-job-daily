@@ -43,7 +43,7 @@ export function DriverSelector({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className="h-auto min-h-10 w-full justify-between px-3 py-2 text-left font-normal"
+          className="h-auto min-h-9 w-full justify-between rounded-none px-2 py-1.5 text-left font-normal"
         >
           <span className="min-w-0">
             {selected ? (
