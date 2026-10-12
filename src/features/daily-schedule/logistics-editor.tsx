@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import { Input } from "@/components/ui/input";
 import { DriverSelector } from "@/features/daily-schedule/driver-selector";
 import type { DriverOption } from "@/features/daily-schedule/driver-options";
@@ -19,6 +21,7 @@ export function LogisticsEditor({
   onDriverChange: (employeeId: string | null) => void;
   onEquipmentVehicleChange: (value: string) => void;
 }) {
+  const vehicleId = useId();
   const driver = driverOptions.find(
     (option) => option.employeeId === driverEmployeeId,
   );
@@ -36,10 +39,11 @@ export function LogisticsEditor({
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">
+        <label htmlFor={vehicleId} className="text-xs font-medium text-muted-foreground">
           Equipment / Vehicle
         </label>
         <Input
+          id={vehicleId}
           value={equipmentVehicle}
           maxLength={200}
           disabled={disabled}

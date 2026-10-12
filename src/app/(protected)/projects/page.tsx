@@ -118,10 +118,9 @@ export default async function ProjectsPage({
 
   if (!result.ok) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         <PageHeader
           title="Projects"
-          description="Manage project, job number, and sales order information."
           actions={
             canManage ? (
               <>
@@ -131,7 +130,7 @@ export default async function ProjectsPage({
             ) : undefined
           }
         />
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {result.error.message}
         </div>
       </div>
@@ -142,10 +141,9 @@ export default async function ProjectsPage({
   const totalPages = Math.max(data.pageCount, 1);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Projects"
-        description="Manage project, job number, and sales order information."
         actions={
             canManage ? (
               <>
@@ -167,6 +165,7 @@ export default async function ProjectsPage({
               aria-hidden="true"
             />
             <Input
+              aria-label="Search projects"
               name="search"
               defaultValue={data.search}
               placeholder="Search customer, project, job no, or SO no..."
@@ -196,7 +195,7 @@ export default async function ProjectsPage({
           ) : null}
         </form>
 
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-hidden rounded-none border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -275,7 +274,7 @@ export default async function ProjectsPage({
                 ))
               ) : (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={canManage ? 6 : 5} className="h-40 text-center">
+                  <TableCell colSpan={canManage ? 6 : 5} className="h-28 text-center">
                     <p className="text-sm font-medium">
                       {data.search ? "No projects found" : "No projects yet"}
                     </p>
@@ -290,7 +289,7 @@ export default async function ProjectsPage({
             </TableBody>
           </Table>
 
-          <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               {data.total} {data.total === 1 ? "project" : "projects"}
             </p>

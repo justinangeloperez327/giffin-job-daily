@@ -41,10 +41,9 @@ export default async function UsersPage() {
   const result = await listUsers();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Users"
-        description="Manage application access and operational roles."
         actions={
           <Link href="/users/new" className={buttonVariants()}>
             <Plus className="size-4" />
@@ -54,11 +53,11 @@ export default async function UsersPage() {
       />
 
       {!result.ok ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {result.error.message}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-hidden rounded-none border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">

@@ -15,6 +15,7 @@ import {
 import {
   formatScheduleDate,
   formatTimeValue,
+  formatTimeLabel,
 } from "@/lib/date-time";
 import { loadProjectDetail } from "@/server/services/read-models";
 
@@ -32,9 +33,9 @@ function displayTiming(
   startTime: Date | null,
   endTime: Date | null,
 ) {
-  const camp = formatTimeValue(campStartTime);
-  const start = formatTimeValue(startTime);
-  const end = formatTimeValue(endTime);
+  const camp = campStartTime ? formatTimeLabel(formatTimeValue(campStartTime)) : null;
+  const start = startTime ? formatTimeLabel(formatTimeValue(startTime)) : null;
+  const end = endTime ? formatTimeLabel(formatTimeValue(endTime)) : null;
 
   if (!camp && !start && !end) {
     return "—";
@@ -60,9 +61,9 @@ export default async function ProjectDetailPage({
     }
 
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         <PageHeader title="Project" />
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {result.error.message}
         </div>
       </div>
@@ -72,7 +73,7 @@ export default async function ProjectDetailPage({
   const project = result.data;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title={project.projectName}
         description={`${project.customerName} · Job ${project.jobNo} · SO ${project.soNo}`}
@@ -87,20 +88,20 @@ export default async function ProjectDetailPage({
         }
       />
 
-      <div className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-4">
-        <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r">
+      <div className="grid overflow-hidden rounded-none border bg-card sm:grid-cols-4">
+        <div className="border-b px-3 py-2 sm:border-b-0 sm:border-r">
           <p className="text-xs text-muted-foreground">Client / Customer</p>
           <p className="mt-1 text-sm font-medium">{project.customerName}</p>
         </div>
-        <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r">
+        <div className="border-b px-3 py-2 sm:border-b-0 sm:border-r">
           <p className="text-xs text-muted-foreground">Job No</p>
           <p className="mt-1 text-sm font-medium">{project.jobNo}</p>
         </div>
-        <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r">
+        <div className="border-b px-3 py-2 sm:border-b-0 sm:border-r">
           <p className="text-xs text-muted-foreground">SO No</p>
           <p className="mt-1 text-sm font-medium">{project.soNo}</p>
         </div>
-        <div className="px-4 py-3">
+        <div className="px-3 py-2">
           <p className="text-xs text-muted-foreground">Daily Schedules</p>
           <p className="mt-1 text-sm font-medium">
             {project._count.dailySchedules}
@@ -116,7 +117,7 @@ export default async function ProjectDetailPage({
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-hidden rounded-none border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -134,7 +135,7 @@ export default async function ProjectDetailPage({
                     key={`${formatScheduleDate(schedule.scheduleDate)}-${schedule.projectJobNo}`}
                   >
                     <TableCell className="font-medium">
-                      {displayDate(schedule.scheduleDate)}
+                      <Link className="hover:underline" href={`/daily-schedule?date=${formatScheduleDate(schedule.scheduleDate)}`}>{displayDate(schedule.scheduleDate)}</Link>
                     </TableCell>
                     <TableCell>
                       <div>{schedule.foreman.employeeName}</div>

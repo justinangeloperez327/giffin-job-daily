@@ -1,3 +1,4 @@
+import { listUpcomingScheduleDates } from "@/server/repositories/schedules";
 import {
   actionFailure,
   actionSuccess,
@@ -57,6 +58,15 @@ export async function loadDashboardSummary(input: unknown) {
       },
       schedules,
     });
+  } catch (error) {
+    return actionFailure(mapDatabaseError(error));
+  }
+}
+
+
+export async function loadUpcomingScheduleDates(scheduleDate: string) {
+  try {
+    return actionSuccess(await listUpcomingScheduleDates(scheduleDate));
   } catch (error) {
     return actionFailure(mapDatabaseError(error));
   }

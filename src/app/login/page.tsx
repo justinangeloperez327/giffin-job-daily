@@ -24,7 +24,7 @@ export default async function LoginPage() {
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-5 shadow-sm">
+        <div className="rounded-none border bg-card p-3 ">
           <LoginForm />
         </div>
 

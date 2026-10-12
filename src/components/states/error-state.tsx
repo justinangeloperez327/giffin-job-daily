@@ -16,8 +16,8 @@ export function ErrorState({
   onAction?: () => void;
 }) {
   return (
-    <div className="flex min-h-[55vh] flex-col items-center justify-center px-5 text-center">
-      <div className="mb-3 rounded-md border bg-muted/40 p-2.5">
+    <div role="alert" className="flex min-h-40 flex-col items-center justify-center px-5 text-center">
+      <div className="mb-3 rounded-none border bg-muted/40 p-2.5">
         <CircleAlert className="size-5 text-muted-foreground" aria-hidden="true" />
       </div>
       <h1 className="text-lg font-semibold">{title}</h1>

@@ -63,7 +63,7 @@ export function CreateProjectButton() {
       </SheetTrigger>
 
       <SheetContent side="right" className="w-full p-0 sm:max-w-md">
-        <SheetHeader className="border-b px-5 py-4">
+        <SheetHeader className="border-b px-3 py-3 pr-12">
           <SheetTitle>Add Project</SheetTitle>
           <p className="text-sm text-muted-foreground">
             Add the project information used by daily scheduling.
@@ -75,11 +75,11 @@ export function CreateProjectButton() {
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex-1 overflow-y-auto p-3">
             <ProjectFormFields idPrefix="create-project" error={error} />
           </div>
 
-          <div className="flex justify-end gap-2 border-t p-4">
+          <div className="flex justify-end gap-2 border-t p-3">
             <Button
               type="button"
               variant="outline"

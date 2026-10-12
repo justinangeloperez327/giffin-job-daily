@@ -121,7 +121,7 @@ export function ExcelImportButton({ kind }: { kind: ImportKind }) {
       </SheetTrigger>
 
       <SheetContent side="right" className="w-full p-0 sm:max-w-lg">
-        <SheetHeader className="border-b px-5 py-4">
+        <SheetHeader className="border-b px-3 py-3 pr-12">
           <SheetTitle>{config.title}</SheetTitle>
           <p className="text-sm text-muted-foreground">
             {config.description}
@@ -133,8 +133,8 @@ export function ExcelImportButton({ kind }: { kind: ImportKind }) {
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <div className="flex-1 space-y-5 overflow-y-auto p-5">
-            <div className="rounded-lg border bg-muted/30 p-4">
+          <div className="flex-1 space-y-3 overflow-y-auto p-3">
+            <div className="rounded-none border bg-muted/30 p-3">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="size-4 text-muted-foreground" />
                 <p className="text-sm font-medium">Excel format</p>
@@ -148,7 +148,7 @@ export function ExcelImportButton({ kind }: { kind: ImportKind }) {
                 {config.headers.map((header) => (
                   <span
                     key={header}
-                    className="rounded-md border bg-background px-2 py-1 text-xs"
+                    className="rounded-none border bg-background px-2 py-1 text-xs"
                   >
                     {header}
                   </span>
@@ -175,7 +175,7 @@ export function ExcelImportButton({ kind }: { kind: ImportKind }) {
             </div>
 
             {error ? (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+              <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 p-3">
                 <p className="text-sm font-medium text-destructive">
                   {error.message}
                 </p>
@@ -207,7 +207,7 @@ export function ExcelImportButton({ kind }: { kind: ImportKind }) {
             ) : null}
 
             {summary ? (
-              <div className="rounded-lg border bg-muted/30 p-4">
+              <div className="rounded-none border bg-muted/30 p-3">
                 <p className="text-sm font-medium">Import complete</p>
                 <div className="mt-2 grid grid-cols-3 gap-3 text-sm">
                   <div>
@@ -230,7 +230,7 @@ export function ExcelImportButton({ kind }: { kind: ImportKind }) {
             ) : null}
           </div>
 
-          <div className="flex justify-end gap-2 border-t p-4">
+          <div className="flex justify-end gap-2 border-t p-3">
             <Button
               type="button"
               variant="outline"

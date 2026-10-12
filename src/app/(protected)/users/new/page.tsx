@@ -10,7 +10,7 @@ export default async function NewUserPage() {
   await requirePageRole("ADMIN");
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="mx-auto max-w-2xl space-y-3">
       <PageHeader
         title="Add User"
         description="Create an internal account. Public registration is disabled."
@@ -25,7 +25,7 @@ export default async function NewUserPage() {
         }
       />
 
-      <div className="rounded-lg border bg-card p-5">
+      <div className="rounded-none border bg-card p-3">
         <UserForm />
       </div>
     </div>

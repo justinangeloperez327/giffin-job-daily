@@ -39,7 +39,7 @@ function AssignmentTable({
   totalCount: number;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div className="overflow-hidden rounded-none border bg-card">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -97,9 +97,9 @@ export default async function LabourDetailPage({
     }
 
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         <PageHeader title="Employee" />
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {result.error.message}
         </div>
       </div>
@@ -134,7 +134,7 @@ export default async function LabourDetailPage({
   }));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title={labour.employeeName}
         description={`${labour.employeeId} · ${labour.designation}`}
@@ -149,22 +149,22 @@ export default async function LabourDetailPage({
         }
       />
 
-      <div className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-2 lg:grid-cols-4">
-        <div className="border-b px-4 py-3 sm:border-r lg:border-b-0">
+      <div className="grid overflow-hidden rounded-none border bg-card sm:grid-cols-2 lg:grid-cols-4">
+        <div className="border-b px-3 py-2 sm:border-r lg:border-b-0">
           <p className="text-xs text-muted-foreground">Employee ID</p>
           <p className="mt-1 text-sm font-medium">{labour.employeeId}</p>
         </div>
-        <div className="border-b px-4 py-3 lg:border-b-0 lg:border-r">
+        <div className="border-b px-3 py-2 lg:border-b-0 lg:border-r">
           <p className="text-xs text-muted-foreground">Designation</p>
           <p className="mt-1 text-sm font-medium">{labour.designation}</p>
         </div>
-        <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r">
+        <div className="border-b px-3 py-2 sm:border-b-0 sm:border-r">
           <p className="text-xs text-muted-foreground">Mobile</p>
           <p className="mt-1 text-sm font-medium">
             {labour.mobileNumber ?? "—"}
           </p>
         </div>
-        <div className="px-4 py-3">
+        <div className="px-3 py-2">
           <p className="text-xs text-muted-foreground">Schedule Usage</p>
           <p className="mt-1 text-sm font-medium">{totalUsage}</p>
         </div>

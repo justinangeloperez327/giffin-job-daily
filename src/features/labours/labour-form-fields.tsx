@@ -32,9 +32,9 @@ export function LabourFormFields({
   idPrefix: string;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="grid gap-3 sm:grid-cols-2">
       {error ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <div role="alert" className="sm:col-span-2 border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {error.message}
         </div>
       ) : null}

@@ -1,3 +1,4 @@
+import { getScheduleDateInTimeZone, parseScheduleDate } from "@/lib/date-time";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import type {
@@ -71,6 +72,7 @@ export async function listLabours({
   sort = "employeeName",
   order = "asc",
 }: LabourListOptions = {}) {
+  const today = parseScheduleDate(getScheduleDateInTimeZone(new Date(), process.env.APP_TIME_ZONE ?? "Asia/Dubai"));
   return prisma.labour.findMany({
     where: buildLabourWhere({ search, designation }),
     select: {
@@ -78,6 +80,9 @@ export async function listLabours({
       employeeName: true,
       designation: true,
       mobileNumber: true,
+      foremanSchedules: { where: { scheduleDate: today }, select: { projectJobNo: true } },
+      driverSchedules: { where: { scheduleDate: today }, select: { projectJobNo: true } },
+      scheduleAssignments: { where: { scheduleDate: today }, select: { projectJobNo: true } },
       _count: {
         select: {
           foremanSchedules: true,

@@ -14,7 +14,7 @@ import type {
   ScheduleBoardRow,
   ScheduleResource,
 } from "@/features/daily-schedule/daily-schedule-board";
-import { shiftScheduleDate } from "@/lib/date-time";
+import { formatTimeLabel, shiftScheduleDate } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 
 function dateHref(date: string) {
@@ -33,8 +33,8 @@ export function ReadOnlyScheduleBoard({
   resources: ScheduleResource[];
 }) {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-3">
+      <div className="flex flex-col gap-2 rounded-none border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Link
             href={dateHref(shiftScheduleDate(selectedDate, -1))}
@@ -45,10 +45,11 @@ export function ReadOnlyScheduleBoard({
           </Link>
           <form method="get" className="flex items-center gap-2">
             <input
+              aria-label="Schedule date"
               type="date"
               name="date"
               defaultValue={selectedDate}
-              className="h-9 rounded-md border bg-background px-2 text-sm"
+              className="h-9 rounded-none border bg-background px-2 text-sm"
             />
             <Button type="submit" variant="outline" size="sm">
               Go
@@ -75,7 +76,7 @@ export function ReadOnlyScheduleBoard({
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-card">
+      <div className="overflow-x-auto rounded-none border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -96,10 +97,10 @@ export function ReadOnlyScheduleBoard({
                 );
                 const timing = [
                   schedule.campStartTime
-                    ? `Camp ${schedule.campStartTime}`
+                    ? `Camp ${formatTimeLabel(schedule.campStartTime)}`
                     : null,
                   schedule.startTime || schedule.endTime
-                    ? `${schedule.startTime ?? "—"}–${schedule.endTime ?? "—"}`
+                    ? `${formatTimeLabel(schedule.startTime)}–${formatTimeLabel(schedule.endTime)}`
                     : null,
                 ]
                   .filter(Boolean)
@@ -115,7 +116,7 @@ export function ReadOnlyScheduleBoard({
                         {schedule.projectName}
                       </Link>
                       <div className="text-xs text-muted-foreground">
-                        Job {schedule.projectJobNo} · SO {schedule.soNo}
+                        {schedule.customerName} · Job {schedule.projectJobNo} · SO {schedule.soNo}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -153,7 +154,7 @@ export function ReadOnlyScheduleBoard({
               })
             ) : (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="h-40 text-center">
+                <TableCell colSpan={6} className="h-28 text-center">
                   <p className="text-sm font-medium">No schedule for this day</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     There are no project assignments for the selected date.

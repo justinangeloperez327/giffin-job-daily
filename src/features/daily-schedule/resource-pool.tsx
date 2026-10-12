@@ -154,7 +154,7 @@ export function ResourcePoolPanel({
 
   return (
     <div className="flex h-full min-h-80 flex-col">
-      <div className="border-b px-4 py-3">
+      <div className="border-b px-3 py-2">
         <div className="flex items-center gap-2">
           <UsersRound className="size-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold">Resource Pool</h2>
@@ -174,7 +174,7 @@ export function ResourcePoolPanel({
             setSearch("");
           }}
           className={cn(
-            "h-8 rounded-md text-xs font-medium transition-colors",
+            "h-8 rounded-none text-xs font-medium transition-colors",
             tab === "foremen"
               ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:text-foreground",
@@ -189,7 +189,7 @@ export function ResourcePoolPanel({
             setSearch("");
           }}
           className={cn(
-            "h-8 rounded-md text-xs font-medium transition-colors",
+            "h-8 rounded-none text-xs font-medium transition-colors",
             tab === "labours"
               ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:text-foreground",
@@ -222,7 +222,7 @@ export function ResourcePoolPanel({
                 Select a project row before assigning a foreman.
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <section>
                   <div className="flex items-center justify-between px-2 py-1">
                     <p className="text-xs font-medium text-muted-foreground">
@@ -241,7 +241,7 @@ export function ResourcePoolPanel({
                           disabled={pending}
                           onClick={() => onAssignForeman(foreman.employeeId)}
                           className={cn(
-                            "flex w-full items-start justify-between gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50",
+                            "flex w-full items-start justify-between gap-2 rounded-none px-2 py-2 text-left transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50",
                             foreman.selected && "bg-accent/60",
                           )}
                         >
@@ -280,7 +280,7 @@ export function ResourcePoolPanel({
                       assignedForemen.map((foreman) => (
                         <div
                           key={foreman.employeeId}
-                          className="rounded-md border px-2 py-2"
+                          className="border-b px-2 py-2"
                         >
                           <p className="truncate text-sm font-medium">
                             {foreman.employeeName}
@@ -380,7 +380,7 @@ export function ResourcePoolPanel({
                     <div
                       key={labour.employeeId}
                       className={cn(
-                        "rounded-md border px-2.5 py-2",
+                        "border-b px-2 py-2",
                         (labour.selected || staged) && "bg-accent/35",
                       )}
                     >

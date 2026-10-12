@@ -63,7 +63,7 @@ export function CreateLabourButton() {
       </SheetTrigger>
 
       <SheetContent side="right" className="w-full p-0 sm:max-w-md">
-        <SheetHeader className="border-b px-5 py-4">
+        <SheetHeader className="border-b px-3 py-3 pr-12">
           <SheetTitle>Add Labour</SheetTitle>
           <p className="text-sm text-muted-foreground">
             Add an employee who can be assigned to daily schedules.
@@ -75,11 +75,11 @@ export function CreateLabourButton() {
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex-1 overflow-y-auto p-3">
             <LabourFormFields idPrefix="create-labour" error={error} />
           </div>
 
-          <div className="flex justify-end gap-2 border-t p-4">
+          <div className="flex justify-end gap-2 border-t p-3">
             <Button
               type="button"
               variant="outline"

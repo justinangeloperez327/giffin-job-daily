@@ -47,12 +47,11 @@ export default async function DailySchedulePage({
 
   if (!scheduleResult.ok) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         <PageHeader
           title="Daily Schedule"
-          description="Plan daily project resources, timing, targets, and logistics."
         />
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {scheduleResult.error.message}
         </div>
       </div>
@@ -62,6 +61,7 @@ export default async function DailySchedulePage({
   const schedules: ScheduleBoardRow[] = scheduleResult.data.map((schedule) => ({
     projectJobNo: schedule.projectJobNo,
     projectName: schedule.project.projectName,
+    customerName: schedule.project.customerName,
     soNo: schedule.project.soNo,
     foremanEmployeeId: schedule.foreman.employeeId,
     foremanName: schedule.foreman.employeeName,
@@ -89,10 +89,9 @@ export default async function DailySchedulePage({
     : [];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Daily Schedule"
-        description="Plan daily project resources, timing, targets, and logistics."
       />
 
       {user.role === "VIEWER" ? (

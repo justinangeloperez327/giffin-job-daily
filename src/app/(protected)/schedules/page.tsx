@@ -38,12 +38,11 @@ export default async function SchedulesPage() {
 
   if (!result.ok) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <PageHeader
           title="Schedules"
-          description="Browse daily schedules and open a date to manage its projects."
         />
-        <div className="border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <div role="alert" className="border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {result.error.message}
         </div>
       </div>
@@ -62,10 +61,9 @@ export default async function SchedulesPage() {
   const dates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Schedules"
-        description="Daily schedule list grouped by date."
         actions={
           <Button asChild>
             <Link href="/daily-schedule">
@@ -77,7 +75,7 @@ export default async function SchedulesPage() {
       />
 
       {dates.length === 0 ? (
-        <div className="border bg-card px-4 py-12 text-center">
+        <div className="border bg-card px-4 py-6 text-center">
           <CalendarDays className="mx-auto size-6 text-muted-foreground" />
           <p className="mt-3 text-sm font-medium">No schedules yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -85,7 +83,7 @@ export default async function SchedulesPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {dates.map((date) => {
             const schedules = grouped[date];
             const dateValue = schedules[0].scheduleDate;
@@ -94,7 +92,7 @@ export default async function SchedulesPage() {
               <section key={date} className="space-y-2">
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-border" />
-                  <div className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <div className="shrink-0 text-xs font-medium text-muted-foreground">
                     {displayScheduleDate(dateValue)}
                   </div>
                   <div className="h-px flex-1 bg-border" />
@@ -106,9 +104,7 @@ export default async function SchedulesPage() {
                       <p className="text-sm font-medium">
                         {schedules.length} {schedules.length === 1 ? "Project" : "Projects"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Daily schedule for {displayScheduleDate(dateValue)}
-                      </p>
+
                     </div>
 
                     <Button asChild variant="outline" size="sm">
@@ -119,7 +115,7 @@ export default async function SchedulesPage() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  <div className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                     {schedules.map((schedule) => {
                       const shift = shiftFromStartTime(schedule.startTime);
 
@@ -127,11 +123,11 @@ export default async function SchedulesPage() {
                         <Link
                           key={schedule.projectJobNo}
                           href={`/daily-schedule?date=${date}`}
-                          className="min-h-28 bg-background p-3 transition-colors hover:bg-muted/40"
+                          className="min-h-24 border bg-background p-3 transition-colors hover:bg-muted/40"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              <p className="text-xs text-muted-foreground">
                                 Customer
                               </p>
                               <p className="truncate text-sm font-medium">
@@ -140,7 +136,7 @@ export default async function SchedulesPage() {
                             </div>
 
                             {shift ? (
-                              <span className="flex shrink-0 items-center gap-1 border px-1.5 py-0.5 text-[10px] font-medium">
+                              <span className="flex shrink-0 items-center gap-1 border px-1.5 py-0.5 text-xs font-medium">
                                 {shift === "DAY" ? (
                                   <Sun className="size-3" />
                                 ) : (
@@ -149,13 +145,14 @@ export default async function SchedulesPage() {
                                 {shift === "DAY" ? "Day" : "Night"}
                               </span>
                             ) : (
-                              <span className="shrink-0 border px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                              <span className="shrink-0 border px-1.5 py-0.5 text-xs text-muted-foreground">
                                 Shift not set
                               </span>
                             )}
                           </div>
 
-                          <div className="mt-3 space-y-1">
+                          <p className="mt-2 text-sm font-medium leading-5">{schedule.project.projectName}</p>
+                          <div className="mt-2 space-y-1">
                             <div className="flex items-center justify-between gap-2 text-xs">
                               <span className="text-muted-foreground">Foreman</span>
                               <span className="truncate font-medium">
@@ -167,8 +164,8 @@ export default async function SchedulesPage() {
                               <span className="truncate">{schedule.project.jobNo}</span>
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
-                              <span className="text-muted-foreground">SO No.</span>
-                              <span className="truncate">{schedule.project.soNo}</span>
+                              <span className="text-muted-foreground">Labours</span>
+                              <span className="tabular-nums">{schedule.labours.length}</span>
                             </div>
                           </div>
                         </Link>

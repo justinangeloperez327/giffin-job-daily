@@ -35,9 +35,9 @@ export default async function UserDetailPage({
     }
 
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         <PageHeader title="User" />
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {result.error.message}
         </div>
       </div>
@@ -47,7 +47,7 @@ export default async function UserDetailPage({
   const user = result.data;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-3xl space-y-3">
       <PageHeader
         title={user.name}
         description={user.email}
@@ -62,20 +62,20 @@ export default async function UserDetailPage({
         }
       />
 
-      <div className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-3">
-        <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r">
+      <div className="grid overflow-hidden rounded-none border bg-card sm:grid-cols-3">
+        <div className="border-b px-3 py-2 sm:border-b-0 sm:border-r">
           <p className="text-xs text-muted-foreground">Created</p>
           <p className="mt-1 text-sm font-medium">
             {displayDate(user.createdAt)}
           </p>
         </div>
-        <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r">
+        <div className="border-b px-3 py-2 sm:border-b-0 sm:border-r">
           <p className="text-xs text-muted-foreground">Last login</p>
           <p className="mt-1 text-sm font-medium">
             {displayDate(user.lastLoginAt)}
           </p>
         </div>
-        <div className="px-4 py-3">
+        <div className="px-3 py-2">
           <p className="text-xs text-muted-foreground">Status</p>
           <p className="mt-1 text-sm font-medium">
             {user.isActive ? "Active" : "Inactive"}
@@ -83,7 +83,7 @@ export default async function UserDetailPage({
         </div>
       </div>
 
-      <section className="space-y-3 rounded-lg border bg-card p-5">
+      <section className="space-y-3 rounded-none border bg-card p-3">
         <div>
           <h2 className="text-base font-semibold">Account</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -93,7 +93,7 @@ export default async function UserDetailPage({
         <UserForm user={user} />
       </section>
 
-      <section className="space-y-3 rounded-lg border bg-card p-5">
+      <section className="space-y-3 rounded-none border bg-card p-3">
         <div>
           <h2 className="text-base font-semibold">Reset Password</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">

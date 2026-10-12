@@ -1,9 +1,4 @@
-import {
-  CalendarDays,
-  HardHat,
-  UserRoundCheck,
-  UsersRound,
-} from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -17,10 +12,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  formatTimeLabel,
   formatTimeValue,
+  formatScheduleDate,
   getScheduleDateInTimeZone,
 } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
+import { summarizeOperations, shiftFromTime } from "@/features/daily-schedule/operational-summary";
+import { loadUpcomingScheduleDates } from "@/server/services/dashboard";
 import { loadDashboardSummary } from "@/server/services/dashboard";
 
 export const dynamic = "force-dynamic";
@@ -30,9 +29,9 @@ function displayTiming(
   startTime: Date | null,
   endTime: Date | null,
 ) {
-  const camp = formatTimeValue(campStartTime);
-  const start = formatTimeValue(startTime);
-  const end = formatTimeValue(endTime);
+  const camp = campStartTime ? formatTimeLabel(formatTimeValue(campStartTime)) : null;
+  const start = startTime ? formatTimeLabel(formatTimeValue(startTime)) : null;
+  const end = endTime ? formatTimeLabel(formatTimeValue(endTime)) : null;
 
   if (!camp && !start && !end) {
     return "—";
@@ -43,25 +42,11 @@ function displayTiming(
   return [camp ? `Camp ${camp}` : null, work].filter(Boolean).join(" · ");
 }
 
-function Metric({
-  label,
-  value,
-  detail,
-  icon: Icon,
-}: {
-  label: string;
-  value: number;
-  detail: string;
-  icon: typeof CalendarDays;
-}) {
+function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border bg-card px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-      </div>
-      <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+    <div className="border bg-card p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
     </div>
   );
 }
@@ -69,16 +54,18 @@ function Metric({
 export default async function DashboardPage() {
   const timeZone = process.env.APP_TIME_ZONE ?? "Asia/Dubai";
   const today = getScheduleDateInTimeZone(new Date(), timeZone);
-  const result = await loadDashboardSummary({ scheduleDate: today });
+  const [result, upcomingResult] = await Promise.all([
+    loadDashboardSummary({ scheduleDate: today }),
+    loadUpcomingScheduleDates(today),
+  ]);
 
   if (!result.ok) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         <PageHeader
           title="Dashboard"
-          description="Daily workforce and project scheduling overview."
         />
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {result.error.message}
         </div>
       </div>
@@ -86,13 +73,13 @@ export default async function DashboardPage() {
   }
 
   const data = result.data;
-  const visibleSchedules = data.schedules.slice(0, 8);
+  const visibleSchedules = data.schedules;
+  const operations = summarizeOperations(data.schedules, data.totalEmployees);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Dashboard"
-        description="Daily workforce and project scheduling overview."
         actions={
           <Link
             href={`/daily-schedule?date=${encodeURIComponent(today)}`}
@@ -104,35 +91,17 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric
-          label="Projects Today"
-          value={data.today.projectCount}
-          detail="Projects scheduled for today"
-          icon={CalendarDays}
-        />
-        <Metric
-          label="Labour Assigned"
-          value={data.today.labourCount}
-          detail="Labour assignments for today"
-          icon={UserRoundCheck}
-        />
-        <Metric
-          label="Projects"
-          value={data.totalProjects}
-          detail="Projects available for scheduling"
-          icon={HardHat}
-        />
-        <Metric
-          label="Employees"
-          value={data.totalEmployees}
-          detail="Employees in the resource pool"
-          icon={UsersRound}
-        />
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 2xl:grid-cols-6">
+        <Metric label="Projects today" value={data.today.projectCount} />
+        <Metric label="Foremen assigned" value={operations.foremanCount} />
+        <Metric label="Labours assigned" value={operations.labourCount} />
+        <Metric label="Unassigned resources" value={operations.unassignedCount} />
+        <Metric label="Day-shift projects" value={operations.dayCount} />
+        <Metric label="Night-shift projects" value={operations.nightCount} />
       </div>
 
-      <section className="overflow-hidden rounded-lg border bg-card">
-        <div className="flex flex-col gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className="overflow-hidden rounded-none border bg-card">
+        <div className="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-sm font-semibold">Today&apos;s Plan</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
@@ -159,7 +128,7 @@ export default async function DashboardPage() {
               <TableHead>Project</TableHead>
               <TableHead>Foreman</TableHead>
               <TableHead className="text-right">Labours</TableHead>
-              <TableHead>Timing</TableHead>
+              <TableHead>Shift / Timing</TableHead>
               <TableHead>Logistics</TableHead>
             </TableRow>
           </TableHeader>
@@ -170,10 +139,10 @@ export default async function DashboardPage() {
                 <TableRow key={schedule.projectJobNo}>
                   <TableCell>
                     <div className="font-medium">
-                      {schedule.project.projectName}
+                      <Link href={`/daily-schedule?date=${today}`} className="hover:underline">{schedule.project.projectName}</Link>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      Job {schedule.projectJobNo} · SO {schedule.project.soNo}
+                      {schedule.project.customerName} · Job {schedule.projectJobNo} · SO {schedule.project.soNo}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -186,6 +155,7 @@ export default async function DashboardPage() {
                     {schedule.labours.length}
                   </TableCell>
                   <TableCell>
+                    <p className="text-xs text-muted-foreground">{shiftFromTime(formatTimeValue(schedule.startTime)) ?? "Shift not set"}</p>
                     {displayTiming(
                       schedule.campStartTime,
                       schedule.startTime,
@@ -210,7 +180,7 @@ export default async function DashboardPage() {
               ))
             ) : (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={5} className="h-40 text-center">
+                <TableCell colSpan={5} className="h-28 text-center">
                   <p className="text-sm font-medium">
                     No projects scheduled today
                   </p>
@@ -230,32 +200,36 @@ export default async function DashboardPage() {
         ) : null}
       </section>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <Link
-          href="/projects"
-          className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/40"
-        >
-          <span>
-            <span className="block text-sm font-medium">Projects</span>
-            <span className="block text-xs text-muted-foreground">
-              Maintain project, job number, and SO information.
-            </span>
-          </span>
-          <HardHat className="size-4 text-muted-foreground" aria-hidden="true" />
-        </Link>
-
-        <Link
-          href="/labours"
-          className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/40"
-        >
-          <span>
-            <span className="block text-sm font-medium">Labours</span>
-            <span className="block text-xs text-muted-foreground">
-              Maintain employee, designation, and mobile information.
-            </span>
-          </span>
-          <UsersRound className="size-4 text-muted-foreground" aria-hidden="true" />
-        </Link>
+      <div className="grid gap-3 lg:grid-cols-2">
+        <section className="border bg-card">
+          <h2 className="border-b px-3 py-2 text-sm font-semibold">Resource conflicts / issues</h2>
+          {operations.issues.length ? (
+            <ul className="divide-y">
+              {operations.issues.map((issue, index) => (
+                <li key={`${issue.projectJobNo}-${index}`} className="px-3 py-2 text-sm">
+                  <Link className="font-medium hover:underline" href={`/daily-schedule?date=${today}`}>Job {issue.projectJobNo}</Link>
+                  <p className="text-xs text-muted-foreground">{issue.message}</p>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="p-3 text-sm text-muted-foreground">No resource conflicts or incomplete assignments detected.</p>}
+        </section>
+        <section className="border bg-card">
+          <h2 className="border-b px-3 py-2 text-sm font-semibold">Upcoming schedule dates</h2>
+          {!upcomingResult.ok ? (
+            <p role="alert" className="p-3 text-sm text-destructive">{upcomingResult.error.message}</p>
+          ) : upcomingResult.data.length ? (
+            <ul className="divide-y">
+              {upcomingResult.data.map((item) => {
+                const date = formatScheduleDate(item.scheduleDate);
+                return <li key={date}><Link className="flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/40" href={`/daily-schedule?date=${date}`}>
+                  <span>{new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(item.scheduleDate)}</span>
+                  <span className="text-xs text-muted-foreground">{item._count._all} {item._count._all === 1 ? "project" : "projects"}</span>
+                </Link></li>;
+              })}
+            </ul>
+          ) : <p className="p-3 text-sm text-muted-foreground">No upcoming schedules.</p>}
+        </section>
       </div>
     </div>
   );

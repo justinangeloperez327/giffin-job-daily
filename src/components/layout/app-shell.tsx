@@ -76,13 +76,15 @@ function Navigation({
         const active =
           item.href === "/"
             ? pathname === "/"
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            : pathname === item.href ||
+              pathname.startsWith(`${item.href}/`) ||
+              (item.href === "/schedules" && pathname === "/daily-schedule");
 
         const link = (
           <Link
             href={item.href}
             className={cn(
-              "flex h-9 items-center rounded-md text-sm transition-colors",
+              "flex h-9 items-center rounded-none text-sm transition-colors",
               collapsed && !mobile
                 ? "justify-center px-0"
                 : "gap-2.5 px-3",
@@ -131,6 +133,11 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const pageContext = pathname === "/daily-schedule"
+    ? "Daily Schedule"
+    : [...baseNavigation, { name: "Users", href: "/users" }].find((item) =>
+        item.href === "/" ? pathname === "/" : pathname.startsWith(item.href),
+      )?.name ?? "Workspace";
 
   return (
     <div className="min-h-screen">
@@ -165,6 +172,7 @@ export function AppShell({
             onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
           >
             {sidebarCollapsed ? (
               <PanelLeftOpen className="size-4" />
@@ -208,7 +216,7 @@ export function AppShell({
           sidebarCollapsed ? "md:pl-16" : "md:pl-60",
         )}
       >
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-6">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-background px-3">
           <div className="flex items-center gap-2 md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -217,7 +225,7 @@ export function AppShell({
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-0">
-                <SheetHeader className="border-b px-4 py-4 text-left">
+                <SheetHeader className="border-b px-3 py-3 text-left">
                   <SheetTitle>Giffin Job Daily</SheetTitle>
                   <p className="text-xs text-muted-foreground">
                     Workforce Scheduling
@@ -239,14 +247,14 @@ export function AppShell({
           </div>
 
           <div className="hidden text-sm text-muted-foreground md:block">
-            Daily operations workspace
+            {pageContext}
           </div>
 
           <div className="flex items-center gap-1">
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-9 max-w-52 px-2.5">
+                <Button variant="ghost" className="h-9 max-w-24 px-2 sm:max-w-52">
                   <span className="truncate">{currentUser.name}</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -276,7 +284,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1600px] px-4 py-5 md:px-6 md:py-6">
+        <main className="mx-auto w-full max-w-[1920px] px-3 py-3">
           {children}
         </main>
       </div>

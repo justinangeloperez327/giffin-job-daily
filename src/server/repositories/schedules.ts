@@ -103,3 +103,14 @@ export async function listRecentDailySchedules(takeDates = 30) {
     ],
   });
 }
+
+
+export async function listUpcomingScheduleDates(scheduleDate: string) {
+  return prisma.dailySchedule.groupBy({
+    by: ["scheduleDate"],
+    where: { scheduleDate: { gt: parseScheduleDate(scheduleDate) } },
+    _count: { _all: true },
+    orderBy: { scheduleDate: "asc" },
+    take: 7,
+  });
+}

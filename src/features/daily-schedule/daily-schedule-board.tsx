@@ -66,6 +66,7 @@ import { cn } from "@/lib/utils";
 export type ScheduleBoardRow = {
   projectJobNo: string;
   projectName: string;
+  customerName: string;
   soNo: string;
   foremanEmployeeId: string;
   foremanName: string;
@@ -172,7 +173,7 @@ function LabourCell({
                     event.stopPropagation();
                     onRemove(employeeId);
                   }}
-                  className="shrink-0 p-0.5 text-muted-foreground hover:bg-background hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+                  className="flex size-6 shrink-0 items-center justify-center text-muted-foreground hover:bg-background hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
                   aria-label={`Remove ${resource?.employeeName ?? employeeId}`}
                 >
                   <X className="size-3" />
@@ -996,7 +997,7 @@ export function DailyScheduleBoard({
   const unsavedRowCount = draftRows.length + dirtySavedCount;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-col gap-2 border bg-card p-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -1106,7 +1107,7 @@ export function DailyScheduleBoard({
       </div>
 
       {projectError ? (
-        <div className="border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-sm text-destructive">
+        <div role="alert" className="border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-sm text-destructive">
           Projects could not be loaded: {projectError}
         </div>
       ) : null}
@@ -1114,7 +1115,7 @@ export function DailyScheduleBoard({
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 overflow-hidden border border-dashed bg-card">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1180px] table-fixed border-collapse">
+            <table aria-label="Daily workforce planning sheet" className="w-full min-w-[1180px] table-fixed border-collapse">
               <colgroup>
                 <col className="w-[22%]" />
                 <col className="w-[16%]" />
@@ -1144,7 +1145,7 @@ export function DailyScheduleBoard({
                 {initialSchedules.length === 0 && draftRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-0">
-                      <div className="flex min-h-64 flex-col items-center justify-center px-5 text-center">
+                      <div className="flex min-h-36 flex-col items-center justify-center px-5 text-center">
                         <div className="mb-3 border bg-muted/40 p-2.5">
                           <CalendarDays className="size-5 text-muted-foreground" />
                         </div>
@@ -1199,6 +1200,7 @@ export function DailyScheduleBoard({
                         <Fragment key={row.projectJobNo}>
                           <tr
                             onClick={() => setSelectedRowKey(rowKey)}
+                            onFocus={() => setSelectedRowKey(rowKey)}
                             className={cn(
                               "cursor-pointer align-top transition-colors",
                               selected && "bg-accent/35",
@@ -1218,7 +1220,7 @@ export function DailyScheduleBoard({
                                   {row.projectName}
                                 </span>
                                 <span className="mt-1 block text-xs text-muted-foreground">
-                                  Job {row.projectJobNo} · SO {row.soNo}
+                                  {row.customerName} · Job {row.projectJobNo} · SO {row.soNo}
                                 </span>
                               </button>
                               <Button
@@ -1330,6 +1332,7 @@ export function DailyScheduleBoard({
                             <td colSpan={7} className="border-t border-dashed p-0">
                               <button
                                 type="button"
+                                aria-expanded={logisticsExpanded}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setSelectedRowKey(rowKey);
@@ -1425,6 +1428,7 @@ export function DailyScheduleBoard({
                         <Fragment key={row.id}>
                           <tr
                             onClick={() => setSelectedRowKey(row.id)}
+                            onFocus={() => setSelectedRowKey(row.id)}
                             className={cn(
                               "cursor-pointer bg-muted/10 align-top transition-colors",
                               selected && "bg-accent/35",
@@ -1434,6 +1438,7 @@ export function DailyScheduleBoard({
                               className="relative border-r border-dashed px-2 py-2 pr-9"
                               onClick={(event) => event.stopPropagation()}
                             >
+                              <button type="button" aria-pressed={selected} onClick={() => setSelectedRowKey(row.id)} className="mb-1 text-xs text-muted-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring">{selected ? "Resource pool selected" : "Select for resource pool"}</button>
                               <ProjectSelector
                                 projects={projects}
                                 value={row.projectJobNo}
@@ -1560,6 +1565,7 @@ export function DailyScheduleBoard({
                             <td colSpan={7} className="border-t border-dashed p-0">
                               <button
                                 type="button"
+                                aria-expanded={logisticsExpanded}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setSelectedRowKey(row.id);

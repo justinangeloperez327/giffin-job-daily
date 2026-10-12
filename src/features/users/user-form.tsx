@@ -50,7 +50,7 @@ export function UserForm({ user }: { user?: EditableUser }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
       <div className="space-y-1.5">
         <label htmlFor="name" className="text-sm font-medium">
           Name
@@ -112,7 +112,7 @@ export function UserForm({ user }: { user?: EditableUser }) {
         </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
         <div className="space-y-1.5">
           <label htmlFor="role" className="text-sm font-medium">
             Role
@@ -145,7 +145,7 @@ export function UserForm({ user }: { user?: EditableUser }) {
         ) : null}
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 sm:col-span-2">
         <Button
           type="button"
           variant="outline"

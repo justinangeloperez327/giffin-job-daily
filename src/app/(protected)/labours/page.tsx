@@ -128,10 +128,9 @@ export default async function LaboursPage({
 
   if (!result.ok) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         <PageHeader
           title="Labours"
-          description="Manage employees and designations used by daily schedules."
           actions={
             canManage ? (
               <>
@@ -141,7 +140,7 @@ export default async function LaboursPage({
             ) : undefined
           }
         />
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="rounded-none border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {result.error.message}
         </div>
       </div>
@@ -152,10 +151,9 @@ export default async function LaboursPage({
   const totalPages = Math.max(data.pageCount, 1);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Labours"
-        description="Manage employees and designations used by daily schedules."
         actions={
             canManage ? (
               <>
@@ -177,6 +175,7 @@ export default async function LaboursPage({
               aria-hidden="true"
             />
             <Input
+              aria-label="Search labours"
               name="search"
               defaultValue={data.search}
               placeholder="Search employee ID, name, or designation..."
@@ -223,7 +222,7 @@ export default async function LaboursPage({
           ) : null}
         </form>
 
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-hidden rounded-none border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -261,7 +260,7 @@ export default async function LaboursPage({
                   />
                 </TableHead>
                 <TableHead>Mobile</TableHead>
-                <TableHead className="w-24 text-right">Usage</TableHead>
+                <TableHead className="w-28">Status today</TableHead>
                 {canManage ? (
                   <TableHead className="w-12">
                     <span className="sr-only">Actions</span>
@@ -293,8 +292,8 @@ export default async function LaboursPage({
                       <TableCell className="text-muted-foreground">
                         {labour.mobileNumber ?? "—"}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {usageCount}
+                      <TableCell>
+                        <span className="text-xs">{labour.foremanSchedules.length + labour.driverSchedules.length + labour.scheduleAssignments.length > 0 ? "Assigned" : "Unassigned"}</span>
                       </TableCell>
                       {canManage ? (
                         <TableCell className="text-right">
@@ -314,7 +313,7 @@ export default async function LaboursPage({
                 })
               ) : (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={canManage ? 6 : 5} className="h-40 text-center">
+                  <TableCell colSpan={canManage ? 6 : 5} className="h-28 text-center">
                     <p className="text-sm font-medium">
                       {data.search || data.designation
                         ? "No employees found"
@@ -331,7 +330,7 @@ export default async function LaboursPage({
             </TableBody>
           </Table>
 
-          <div className="flex flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               {data.total} {data.total === 1 ? "employee" : "employees"}
             </p>

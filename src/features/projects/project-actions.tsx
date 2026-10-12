@@ -138,7 +138,7 @@ export function ProjectActions({ project }: { project: ProjectActionRecord }) {
         }}
       >
         <SheetContent side="right" className="w-full p-0 sm:max-w-md">
-          <SheetHeader className="border-b px-5 py-4">
+          <SheetHeader className="border-b px-3 py-3 pr-12">
             <SheetTitle>Edit Project</SheetTitle>
             <p className="text-sm text-muted-foreground">
               Update customer, project, job number, or sales order information.
@@ -149,7 +149,7 @@ export function ProjectActions({ project }: { project: ProjectActionRecord }) {
             onSubmit={handleEditSubmit}
             className="flex flex-1 flex-col overflow-hidden"
           >
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto p-3">
               <ProjectFormFields
                 idPrefix={`edit-${project.jobNo}`}
                 defaults={project}
@@ -157,7 +157,7 @@ export function ProjectActions({ project }: { project: ProjectActionRecord }) {
               />
             </div>
 
-            <div className="flex justify-end gap-2 border-t p-4">
+            <div className="flex justify-end gap-2 border-t p-3">
               <Button
                 type="button"
                 variant="outline"
