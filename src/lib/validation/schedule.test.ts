@@ -32,13 +32,13 @@ describe("daily schedule validation", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects a foreman also assigned as labour", () => {
+  it("accepts a foreman also assigned as labour on the same project", () => {
     const result = dailyScheduleInputSchema.safeParse({
       ...validSchedule,
-      labourEmployeeIds: ["EMP-F1"],
+      labourEmployeeIds: ["EMP-F1", "EMP-L1"],
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("rejects a driver also assigned as labour", () => {
