@@ -17,9 +17,9 @@ export function shiftFromTime(value: string | null): "Day" | "Night" | null {
 }
 
 export function summarizeOperations(schedules: SummaryRow[], totalEmployees: number) {
-  // Track unique projects per employee, not role assignments. A foreman
-  // serving as labour on the same project is one person, not a conflict.
-  const assignments = new Map<string, Set<string>>();
+  // Keep every role assignment to detect an employee working twice,
+  // even when the duplicate roles belong to the same project.
+  const assignments = new Map<string, string[]>();
   const foremen = new Set<string>();
   const labours = new Set<string>();
   let dayCount = 0;
@@ -27,8 +27,8 @@ export function summarizeOperations(schedules: SummaryRow[], totalEmployees: num
   const issues: Array<{ projectJobNo: string; message: string }> = [];
 
   function record(employeeId: string, projectJobNo: string) {
-    const projects = assignments.get(employeeId) ?? new Set<string>();
-    projects.add(projectJobNo);
+    const projects = assignments.get(employeeId) ?? [];
+    projects.push(projectJobNo);
     assignments.set(employeeId, projects);
   }
 
@@ -52,11 +52,10 @@ export function summarizeOperations(schedules: SummaryRow[], totalEmployees: num
   }
 
   for (const [employeeId, projects] of assignments) {
-    if (projects.size > 1) {
-      const projectJobNos = [...projects];
+    if (projects.length > 1) {
       issues.push({
-        projectJobNo: projectJobNos[0],
-        message: `${employeeId} has multiple project assignments: ${projectJobNos.join(", ")}`,
+        projectJobNo: projects[0],
+        message: `${employeeId} has multiple assignments: ${projects.join(", ")}`,
       });
     }
   }
