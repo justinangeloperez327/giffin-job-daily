@@ -10,6 +10,7 @@ import { labourInputSchema } from "@/lib/validation/labour";
 import { projectInputSchema, type ProjectInput } from "@/lib/validation/project";
 import { mapDatabaseError } from "@/server/database/errors";
 import { withSerializableTransaction } from "@/server/database/transaction";
+import { matchImportedProjects } from "@/server/import/project-matching";
 import {
   parseExcelWorkbook,
   type ImportColumn,
@@ -245,26 +246,41 @@ export async function importProjectsWorkbook(
       );
     }
 
-    const jobNos = validRows.map((row) => row.data.jobNo);
-    const existing = await prisma.project.findMany({
-      where: {
-        jobNo: {
-          in: jobNos,
-        },
-      },
-      select: {
-        jobNo: true,
-      },
-    });
-    const existingJobNos = new Set(existing.map((project) => project.jobNo));
-
-    // Do not clear existing category data when importing an old template
-    // that has no classification columns. Present but blank cells clear values.
+    // Absence of optional columns must not clear existing classifications.
+    // An explicitly blank classification cell does clear the saved value.
     const hasCategory = workbook.detectedColumns.includes("category");
     const hasSubCategory = workbook.detectedColumns.includes("subCategory");
+    const jobNos = validRows.map((row) => row.data.jobNo);
 
-    await withSerializableTransaction(
+    // Match the Job No + SO No pair inside the same transaction as the
+    // writes. A mismatched SO No must never silently change an existing job.
+    const updated = await withSerializableTransaction(
       async (transaction) => {
+        const existing = await transaction.project.findMany({
+          where: { jobNo: { in: jobNos } },
+          select: { jobNo: true, soNo: true },
+        });
+        const matches = matchImportedProjects(validRows, existing);
+
+        if (matches.issues.length > 0) {
+          const errors = Object.fromEntries(
+            matches.issues.slice(0, 50).map((issue) => [
+              `row_${issue.rowNumber}`,
+              [issue.message],
+            ]),
+          );
+          if (matches.issues.length > 50) {
+            errors.more = [
+              `${matches.issues.length - 50} additional row error(s) were omitted.`,
+            ];
+          }
+
+          throw new WorkbookImportError(
+            `Import stopped because ${matches.issues.length} Job No / SO No conflict(s) were found. No projects were changed.`,
+            errors,
+          );
+        }
+
         for (const row of validRows) {
           await transaction.project.upsert({
             where: {
@@ -278,22 +294,19 @@ export async function importProjectsWorkbook(
             update: {
               projectName: row.data.projectName,
               customerName: row.data.customerName,
-              soNo: row.data.soNo,
               ...(hasCategory ? { category: row.data.category ?? null } : {}),
               ...(hasSubCategory ? { subCategory: row.data.subCategory ?? null } : {}),
             },
           });
         }
+
+        return matches.matchedJobNos.size;
       },
       {
         maxWait: 5000,
         timeout: 60000,
       },
     );
-
-    const updated = validRows.filter((row) =>
-      existingJobNos.has(row.data.jobNo),
-    ).length;
 
     return actionSuccess({
       sheetName: workbook.sheetName,
