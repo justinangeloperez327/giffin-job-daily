@@ -17,6 +17,8 @@ export type SavedProject = {
   customerName: string;
   jobNo: string;
   soNo: string;
+  category: string | null;
+  subCategory: string | null;
 };
 
 function mapProjectWriteError(error: unknown) {
@@ -43,12 +45,18 @@ export async function createProject(
 
   try {
     const project = await prisma.project.create({
-      data: parsed.data,
+      data: {
+        ...parsed.data,
+        category: parsed.data.category ?? null,
+        subCategory: parsed.data.subCategory ?? null,
+      },
       select: {
         projectName: true,
         customerName: true,
         jobNo: true,
         soNo: true,
+        category: true,
+        subCategory: true,
       },
     });
 
@@ -79,12 +87,18 @@ export async function updateProject(
       where: {
         jobNo: key.data.jobNo,
       },
-      data: parsed.data,
+      data: {
+        ...parsed.data,
+        category: parsed.data.category ?? null,
+        subCategory: parsed.data.subCategory ?? null,
+      },
       select: {
         projectName: true,
         customerName: true,
         jobNo: true,
         soNo: true,
+        category: true,
+        subCategory: true,
       },
     });
 
@@ -114,6 +128,8 @@ export async function deleteProject(
           customerName: true,
           jobNo: true,
           soNo: true,
+        category: true,
+        subCategory: true,
           _count: {
             select: {
               dailySchedules: true,
@@ -142,6 +158,8 @@ export async function deleteProject(
           customerName: true,
           jobNo: true,
           soNo: true,
+        category: true,
+        subCategory: true,
         },
       });
     });
