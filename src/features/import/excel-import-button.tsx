@@ -38,8 +38,8 @@ const importConfig = {
       "Client / Customer",
       "Job No",
       "SO No",
-      "Category (optional)",
-      "Sub-category (optional)",
+      "Category",
+      "Sub-category",
     ],
   },
   labours: {
