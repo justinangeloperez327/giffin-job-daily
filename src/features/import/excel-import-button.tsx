@@ -33,7 +33,14 @@ const importConfig = {
     title: "Import Projects",
     description:
       "Upload the project master list. Existing Job No records are updated and new Job No records are created.",
-    headers: ["Project Name", "Job No", "SO No"],
+    headers: [
+      "Project Name",
+      "Client / Customer",
+      "Job No",
+      "SO No",
+      "Category (optional)",
+      "Sub-category (optional)",
+    ],
   },
   labours: {
     title: "Import Labours",
@@ -142,8 +149,16 @@ export function ExcelImportButton({ kind }: { kind: ImportKind }) {
               <p className="mt-2 text-xs leading-5 text-muted-foreground">
                 Use the first worksheet. The header row can be within the
                 first 20 rows. A workbook can contain up to 2,000 data rows
-                and must be 5 MB or smaller.
+                and must be 5 MB or smaller. Header rows and rows above them
+                are skipped automatically.
               </p>
+              {kind === "projects" ? (
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Category and Sub-category are optional. Older templates
+                  remain supported, and missing classification columns do not
+                  overwrite existing project classifications.
+                </p>
+              ) : null}
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {config.headers.map((header) => (
                   <span
