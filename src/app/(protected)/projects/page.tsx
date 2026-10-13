@@ -168,7 +168,7 @@ export default async function ProjectsPage({
               aria-label="Search projects"
               name="search"
               defaultValue={data.search}
-              placeholder="Search customer, project, job no, or SO no..."
+              placeholder="Search project, client, category, job or SO..."
               className="pl-9"
             />
           </div>
@@ -230,6 +230,26 @@ export default async function ProjectsPage({
                     pageSize={data.pageSize}
                   />
                 </TableHead>
+                <TableHead>
+                  <SortHeader
+                    label="Category"
+                    field="category"
+                    currentSort={data.sort}
+                    currentOrder={data.order}
+                    search={data.search}
+                    pageSize={data.pageSize}
+                  />
+                </TableHead>
+                <TableHead>
+                  <SortHeader
+                    label="Sub-category"
+                    field="subCategory"
+                    currentSort={data.sort}
+                    currentOrder={data.order}
+                    search={data.search}
+                    pageSize={data.pageSize}
+                  />
+                </TableHead>
                 <TableHead className="w-28 text-right">Schedules</TableHead>
                 {canManage ? (
                   <TableHead className="w-12">
@@ -254,6 +274,8 @@ export default async function ProjectsPage({
                     <TableCell>{project.soNo}</TableCell>
                     <TableCell>{project.customerName}</TableCell>
                     <TableCell>{project.projectName}</TableCell>
+                    <TableCell>{project.category ?? "—"}</TableCell>
+                    <TableCell>{project.subCategory ?? "—"}</TableCell>
                     <TableCell className="text-right tabular-nums text-muted-foreground">
                       {project._count.dailySchedules}
                     </TableCell>
@@ -265,6 +287,8 @@ export default async function ProjectsPage({
                             customerName: project.customerName,
                             jobNo: project.jobNo,
                             soNo: project.soNo,
+                            category: project.category,
+                            subCategory: project.subCategory,
                             scheduleCount: project._count.dailySchedules,
                           }}
                         />
@@ -274,13 +298,13 @@ export default async function ProjectsPage({
                 ))
               ) : (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={canManage ? 6 : 5} className="h-28 text-center">
+                  <TableCell colSpan={canManage ? 8 : 7} className="h-28 text-center">
                     <p className="text-sm font-medium">
                       {data.search ? "No projects found" : "No projects yet"}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {data.search
-                        ? "Try a different customer, project name, job number, or SO number."
+                        ? "Try another client, project name, category, job or SO number."
                         : "Add the first project to start scheduling work."}
                     </p>
                   </TableCell>
