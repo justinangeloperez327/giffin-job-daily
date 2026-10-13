@@ -7,9 +7,10 @@ const roles = {
   sourceForemanEmployeeId: "EMP-F2",
   sourceDriverEmployeeId: null,
   targetDriverEmployeeId: null,
+  targetForemanEmployeeId: "EMP-F3",
 };
 
-describe("dual-role labour moves", () => {
+describe("labour move role conflicts", () => {
   it("allows an ordinary labour transfer", () => {
     expect(getLabourMoveRoleConflict(roles)).toBeNull();
   });
@@ -32,12 +33,21 @@ describe("dual-role labour moves", () => {
     ).not.toBeNull();
   });
 
+  it("blocks assigning labour where the employee is already the target foreman", () => {
+    expect(
+      getLabourMoveRoleConflict({
+        ...roles,
+        targetForemanEmployeeId: "EMP-F1",
+      }),
+    ).toContain("foreman or driver assignment on the target project");
+  });
+
   it("blocks labour role if the employee drives the destination project", () => {
     expect(
       getLabourMoveRoleConflict({
         ...roles,
         targetDriverEmployeeId: "EMP-F1",
       }),
-    ).toContain("driver on the target project");
+    ).toContain("foreman or driver assignment on the target project");
   });
 });
