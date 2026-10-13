@@ -89,8 +89,6 @@ export async function listProjects({
       soNo: true,
       category: true,
       subCategory: true,
-      category: true,
-      subCategory: true,
       _count: {
         select: {
           dailySchedules: true,
@@ -110,6 +108,8 @@ export async function listProjectOptions() {
       customerName: true,
       jobNo: true,
       soNo: true,
+      category: true,
+      subCategory: true,
     },
     orderBy: [{ projectName: "asc" }, { jobNo: "asc" }],
     take: 2000,
