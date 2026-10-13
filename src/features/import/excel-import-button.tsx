@@ -32,7 +32,7 @@ const importConfig = {
   projects: {
     title: "Import Projects",
     description:
-      "Upload the project master list. Existing Job No records are updated and new Job No records are created.",
+      "Upload the project master list. Matching Job No + SO No records are updated; new Job No records are created. A Job No with a different SO No is reported as a conflict.",
     headers: [
       "Project Name",
       "Client / Customer",
