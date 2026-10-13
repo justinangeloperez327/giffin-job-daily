@@ -20,6 +20,7 @@ export type ParsedExcelRow<Key extends string> = {
 
 export type ParsedWorkbook<Key extends string> = {
   sheetName: string;
+  detectedColumns: Key[];
   rows: ParsedExcelRow<Key>[];
 };
 
@@ -243,6 +244,7 @@ export async function parseExcelWorkbook<Key extends string>(
 
   return {
     sheetName: worksheet.name,
+    detectedColumns: [...indexes.keys()],
     rows,
   };
 }
