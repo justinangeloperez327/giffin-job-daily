@@ -15,6 +15,8 @@ function projectInputFromForm(formData: FormData) {
     customerName: formData.get("customerName"),
     jobNo: formData.get("jobNo"),
     soNo: formData.get("soNo"),
+    category: formData.get("category") ?? "",
+    subCategory: formData.get("subCategory") ?? "",
   };
 }
 
