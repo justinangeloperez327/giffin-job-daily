@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { requiredText } from "@/lib/validation/common";
+import { optionalText, requiredText } from "@/lib/validation/common";
 
 export const projectJobNoSchema = requiredText("Job number", 50);
 
@@ -13,6 +13,8 @@ export const projectInputSchema = z.object({
   customerName: requiredText("Customer name", 200),
   jobNo: projectJobNoSchema,
   soNo: requiredText("SO number", 50),
+  category: optionalText(100),
+  subCategory: optionalText(100),
 });
 
 export type ProjectKey = z.infer<typeof projectKeySchema>;
