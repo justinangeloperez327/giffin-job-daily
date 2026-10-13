@@ -6,7 +6,7 @@ const pageSchema = z.coerce.number().int().min(1).max(100000).default(1);
 const pageSizeSchema = z.coerce.number().int().min(1).max(100).default(25);
 
 export const projectSortFieldSchema = z
-  .enum(["projectName", "jobNo", "soNo"])
+  .enum(["projectName", "jobNo", "soNo", "category", "subCategory"])
   .default("projectName");
 export const labourSortFieldSchema = z
   .enum(["employeeName", "employeeId", "designation"])
