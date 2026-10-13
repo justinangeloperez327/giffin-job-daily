@@ -7,6 +7,8 @@ export type ProjectFormDefaults = {
   customerName?: string;
   jobNo?: string;
   soNo?: string;
+  category?: string | null;
+  subCategory?: string | null;
 };
 
 function FieldError({
@@ -74,6 +76,36 @@ export function ProjectFormFields({
           aria-invalid={Boolean(error?.fieldErrors?.customerName)}
         />
         <FieldError error={error} field="customerName" />
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor={`${idPrefix}-category`} className="text-sm font-medium">
+          Category
+        </label>
+        <Input
+          id={`${idPrefix}-category`}
+          name="category"
+          defaultValue={defaults?.category ?? ""}
+          maxLength={100}
+          placeholder="Optional"
+          aria-invalid={Boolean(error?.fieldErrors?.category)}
+        />
+        <FieldError error={error} field="category" />
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor={`${idPrefix}-sub-category`} className="text-sm font-medium">
+          Sub-category
+        </label>
+        <Input
+          id={`${idPrefix}-sub-category`}
+          name="subCategory"
+          defaultValue={defaults?.subCategory ?? ""}
+          maxLength={100}
+          placeholder="Optional"
+          aria-invalid={Boolean(error?.fieldErrors?.subCategory)}
+        />
+        <FieldError error={error} field="subCategory" />
       </div>
 
       <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
