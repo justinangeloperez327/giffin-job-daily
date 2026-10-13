@@ -8,6 +8,7 @@ const resources = [
   { employeeId: "L-3", employeeName: "Other Labour", designation: "Helper", mobileNumber: null, assignments: [{ role: "LABOUR" as const, projectJobNo: "JOB-2", projectName: "Project Two" }] },
   { employeeId: "F-1", employeeName: "Foreman", designation: "Foreman", mobileNumber: null, assignments: [{ role: "FOREMAN" as const, projectJobNo: "JOB-1", projectName: "Project One" }] },
   { employeeId: "F-2", employeeName: "Other Foreman", designation: "Foreman", mobileNumber: null, assignments: [{ role: "FOREMAN" as const, projectJobNo: "JOB-2", projectName: "Project Two" }] },
+  { employeeId: "F-3", employeeName: "Unassigned Foreman", designation: "General Foreman", mobileNumber: null, assignments: [] },
 ];
 
 function options() {
@@ -41,26 +42,17 @@ describe("labour availability", () => {
     expect(assigned?.assignmentRowKey).toBe("saved:JOB-2");
   });
 
-  it("allows the current foreman to also work as labour", () => {
-    const foreman = options().find((item) => item.employeeId === "F-1");
+  it("allows a foreman-designated employee with no assignments to work as labour", () => {
+    const foreman = options().find((item) => item.employeeId === "F-3");
     expect(foreman?.available).toBe(true);
-    expect(foreman?.statusLabel).toBe("Foreman here · can also work as labour");
+    expect(foreman?.designation).toBe("General Foreman");
+    expect(foreman?.statusLabel).toBe("Available");
   });
 
-  it("keeps a dual-role foreman selected as labour", () => {
-    const dualRole = buildLabourOptions({
-      resources,
-      drafts: [],
-      currentRowKey: "saved:JOB-1",
-      projectJobNo: "JOB-1",
-      selectedLabourIds: ["F-1"],
-      currentForemanId: "F-1",
-      currentDriverId: null,
-      savedRowKey: (jobNo) => `saved:${jobNo}`,
-    }).find((item) => item.employeeId === "F-1");
-
-    expect(dualRole?.selected).toBe(true);
-    expect(dualRole?.statusLabel).toBe("Foreman + labour here");
+  it("blocks an employee already assigned as foreman on the selected project", () => {
+    const foreman = options().find((item) => item.employeeId === "F-1");
+    expect(foreman?.available).toBe(false);
+    expect(foreman?.statusLabel).toBe("Foreman on this project");
   });
 
   it("blocks a foreman already assigned on another project", () => {
@@ -69,7 +61,7 @@ describe("labour availability", () => {
     expect(foreman?.statusLabel).toBe("Foreman → JOB-2");
   });
 
-  it("allows same-project dual-role assignment for draft schedules", () => {
+  it("blocks a foreman assigned to the current draft from also being selected as labour", () => {
     const draft = buildLabourOptions({
       resources: [{ ...resources[3], assignments: [] }],
       drafts: [{
@@ -83,7 +75,24 @@ describe("labour availability", () => {
       currentDriverId: null,
       savedRowKey: (jobNo) => `saved:${jobNo}`,
     });
-    expect(draft[0].available).toBe(true);
+    expect(draft[0].available).toBe(false);
+  });
+
+  it("allows an otherwise unassigned foreman to be selected in a different draft project", () => {
+    const available = buildLabourOptions({
+      resources: [resources[5]],
+      drafts: [{
+        rowKey: "draft-1", projectJobNo: "JOB-3",
+        foremanEmployeeId: null, labourEmployeeIds: [],
+      }],
+      currentRowKey: "draft-1",
+      projectJobNo: "JOB-3",
+      selectedLabourIds: [],
+      currentForemanId: null,
+      currentDriverId: null,
+      savedRowKey: (jobNo) => `saved:${jobNo}`,
+    });
+    expect(available[0].available).toBe(true);
   });
 
   it("blocks a driver selected by another draft row", () => {

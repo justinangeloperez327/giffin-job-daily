@@ -39,10 +39,10 @@ describe("foreman availability", () => {
     expect(blocked?.assignmentRowKey).toBe("saved:JOB-2");
   });
 
-  it("allows same-project labour to become the foreman", () => {
+  it("blocks someone already working as labour on the project from also being foreman", () => {
     const labour = options().find((item) => item.employeeId === "F-4");
-    expect(labour?.available).toBe(true);
-    expect(labour?.statusLabel).toBe("Labour here · can also be foreman");
+    expect(labour?.available).toBe(false);
+    expect(labour?.statusLabel).toBe("Labour → JOB-1");
   });
 
   it("keeps a selected legacy designation visible", () => {
@@ -71,7 +71,7 @@ describe("foreman availability", () => {
     expect(blocked?.statusLabel).toBe("Driver on this project");
   });
 
-  it("allows current-project draft labour to become foreman", () => {
+  it("blocks current-project draft labour from also becoming foreman", () => {
     const result = buildForemanOptions({
       resources,
       drafts: [{ rowKey: "draft-1", projectJobNo: "JOB-1", foremanEmployeeId: null, labourEmployeeIds: ["F-2"] }],
@@ -83,7 +83,7 @@ describe("foreman availability", () => {
     });
 
     const blocked = result.find((item) => item.employeeId === "F-2");
-    expect(blocked?.available).toBe(true);
-    expect(blocked?.statusLabel).toBe("Labour here · can also be foreman");
+    expect(blocked?.available).toBe(false);
+    expect(blocked?.statusLabel).toBe("Labour on this project");
   });
 });

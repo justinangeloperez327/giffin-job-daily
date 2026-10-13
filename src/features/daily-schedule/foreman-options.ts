@@ -68,7 +68,7 @@ export function buildForemanOptions({
       const databaseBlocker = resource.assignments.find(
         (assignment) =>
           assignment.projectJobNo !== projectJobNo ||
-          assignment.role === "DRIVER",
+          assignment.role !== "FOREMAN",
       );
 
       const draftBlocker = drafts
@@ -104,7 +104,8 @@ export function buildForemanOptions({
 
       const available =
         selected ||
-        (!currentDriverBlock &&
+        (!currentLabourBlock &&
+          !currentDriverBlock &&
           !databaseBlocker &&
           !draftBlocker &&
           Boolean(projectJobNo));
@@ -113,18 +114,11 @@ export function buildForemanOptions({
       let assignmentRowKey: string | undefined;
 
       if (selected) {
-        statusLabel = currentLabourBlock ||
-          resource.assignments.some(
-            (assignment) =>
-              assignment.projectJobNo === projectJobNo &&
-              assignment.role === "LABOUR",
-          )
-          ? "Foreman + labour here"
-          : "Selected";
+        statusLabel = "Selected";
+      } else if (currentLabourBlock) {
+        statusLabel = "Labour on this project";
       } else if (currentDriverBlock) {
         statusLabel = "Driver on this project";
-      } else if (currentLabourBlock) {
-        statusLabel = "Labour here · can also be foreman";
       } else if (draftBlocker) {
         const project = projects.find(
           (item) => item.jobNo === draftBlocker.projectJobNo,
@@ -135,13 +129,7 @@ export function buildForemanOptions({
         statusLabel = `${roleLabel(databaseBlocker.role)} → ${databaseBlocker.projectJobNo}`;
         assignmentRowKey = savedRowKey(databaseBlocker.projectJobNo);
       } else if (projectJobNo) {
-        statusLabel = resource.assignments.some(
-          (assignment) =>
-            assignment.projectJobNo === projectJobNo &&
-            assignment.role === "LABOUR",
-        )
-          ? "Labour here · can also be foreman"
-          : "Available";
+        statusLabel = "Available";
       }
 
       return {

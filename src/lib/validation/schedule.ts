@@ -52,6 +52,14 @@ export const dailyScheduleInputSchema = z
       });
     }
 
+    if (uniqueLabours.has(value.foremanEmployeeId)) {
+      context.addIssue({
+        code: "custom",
+        path: ["labourEmployeeIds"],
+        message: "The foreman is already assigned to this project and cannot also be assigned as labour.",
+      });
+    }
+
     if (
       value.driverEmployeeId &&
       value.driverEmployeeId === value.foremanEmployeeId
