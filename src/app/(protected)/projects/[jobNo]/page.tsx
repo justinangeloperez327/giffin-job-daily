@@ -109,6 +109,17 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
+      <div className="grid overflow-hidden border bg-card sm:grid-cols-2">
+        <div className="border-b px-3 py-2 sm:border-b-0 sm:border-r">
+          <p className="text-xs text-muted-foreground">Category</p>
+          <p className="mt-1 text-sm font-medium">{project.category ?? "—"}</p>
+        </div>
+        <div className="px-3 py-2">
+          <p className="text-xs text-muted-foreground">Sub-category</p>
+          <p className="mt-1 text-sm font-medium">{project.subCategory ?? "—"}</p>
+        </div>
+      </div>
+
       <section className="space-y-3">
         <div>
           <h2 className="text-base font-semibold">Schedule History</h2>
