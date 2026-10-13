@@ -218,6 +218,7 @@ export async function moveLabourAssignment(input: unknown): Promise<ActionResult
         sourceForemanEmployeeId: sourceAssignment.dailySchedule.foremanEmployeeId,
         sourceDriverEmployeeId: sourceAssignment.dailySchedule.driverEmployeeId,
         targetDriverEmployeeId: targetSchedule.driverEmployeeId,
+        targetForemanEmployeeId: targetSchedule.foremanEmployeeId,
       });
       if (roleConflict) {
         throw new ApplicationError("CONFLICT", roleConflict);
