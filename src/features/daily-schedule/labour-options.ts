@@ -68,12 +68,17 @@ export function buildLabourOptions({
           : null;
 
     const databaseBlocker = resource.assignments.find((assignment) => {
-      // A foreman may also work as labour on the same project.
-      // A driver or assignment on another project remains a conflict.
-      return (
-        assignment.projectJobNo !== projectJobNo ||
-        assignment.role === "DRIVER"
-      );
+      // An employee can fill only one role on a schedule date.
+      // The current labour selection is the one existing role to preserve.
+      if (
+        selected &&
+        assignment.projectJobNo === projectJobNo &&
+        assignment.role === "LABOUR"
+      ) {
+        return false;
+      }
+
+      return true;
     });
 
     const draftBlocker = drafts
@@ -110,7 +115,7 @@ export function buildLabourOptions({
     const available =
       selected ||
       (Boolean(projectJobNo) &&
-        currentRole !== "DRIVER" &&
+        !currentRole &&
         !databaseBlocker &&
         !draftBlocker);
 
@@ -120,14 +125,10 @@ export function buildLabourOptions({
     let canReassign = false;
 
     if (selected) {
-      statusLabel = currentRole === "FOREMAN"
-        ? "Foreman + labour here"
-        : "Assigned here";
+      statusLabel = "Assigned here";
       assignmentRole = "LABOUR";
     } else if (currentRole) {
-      statusLabel = currentRole === "FOREMAN"
-        ? "Foreman here · can also work as labour"
-        : `${roleLabel(currentRole)} on this project`;
+      statusLabel = `${roleLabel(currentRole)} on this project`;
       assignmentRole = currentRole;
     } else if (draftBlocker) {
       statusLabel = `${roleLabel(draftBlocker.role)} → ${draftBlocker.projectJobNo ?? "Draft"}`;
