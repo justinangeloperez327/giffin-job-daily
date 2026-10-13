@@ -18,6 +18,7 @@ import {
 } from "@/lib/validation/schedule";
 import { ApplicationError, mapDatabaseError } from "@/server/database/errors";
 import { withSerializableTransaction } from "@/server/database/transaction";
+import { getLabourMoveRoleConflict } from "@/server/services/labour-move-roles";
 import {
   buildResourceConflictMap,
   findFirstResourceConflict,
@@ -212,21 +213,14 @@ export async function moveLabourAssignment(input: unknown): Promise<ActionResult
       if (!sourceAssignment) throw new ApplicationError("NOT_FOUND", "The labour assignment to move no longer exists.");
       if (!targetSchedule) throw new ApplicationError("NOT_FOUND", "The target schedule no longer exists.");
 
-      // Moving the labour assignment must not strand a foreman or driver on
-      // the source project while allocating that person to another project.
-      if (
-        sourceAssignment.dailySchedule.foremanEmployeeId === value.employeeId ||
-        sourceAssignment.dailySchedule.driverEmployeeId === value.employeeId
-      ) {
-        throw new ApplicationError(
-          "CONFLICT",
-          "The employee is also the foreman or driver on the source project. Change that role before moving their labour assignment.",
-        );
-      }
-      // Labour and foreman are compatible roles on the SAME target project.
-      // Driver remains an exclusive role.
-      if (targetSchedule.driverEmployeeId === value.employeeId) {
-        throw new ApplicationError("CONFLICT", "The employee is the driver on the target project.");
+      const roleConflict = getLabourMoveRoleConflict({
+        employeeId: value.employeeId,
+        sourceForemanEmployeeId: sourceAssignment.dailySchedule.foremanEmployeeId,
+        sourceDriverEmployeeId: sourceAssignment.dailySchedule.driverEmployeeId,
+        targetDriverEmployeeId: targetSchedule.driverEmployeeId,
+      });
+      if (roleConflict) {
+        throw new ApplicationError("CONFLICT", roleConflict);
       }
 
       const conflicts = buildResourceConflictMap(
