@@ -7,7 +7,7 @@ import {
 } from "@/lib/action-result";
 import { prisma } from "@/lib/prisma";
 import { labourInputSchema } from "@/lib/validation/labour";
-import { projectInputSchema } from "@/lib/validation/project";
+import { projectInputSchema, type ProjectInput } from "@/lib/validation/project";
 import { mapDatabaseError } from "@/server/database/errors";
 import { withSerializableTransaction } from "@/server/database/transaction";
 import {
@@ -21,7 +21,9 @@ type ProjectColumn =
   | "projectName"
   | "customerName"
   | "jobNo"
-  | "soNo";
+  | "soNo"
+  | "category"
+  | "subCategory";
 
 type LabourColumn =
   | "employeeId"
@@ -74,6 +76,25 @@ const projectColumns: readonly ImportColumn<ProjectColumn>[] = [
       "sales order",
       "sales_order",
       "sales order no",
+    ],
+  },
+  {
+    key: "category",
+    label: "Category",
+    required: false,
+    aliases: ["project_category", "project category", "category_name"],
+  },
+  {
+    key: "subCategory",
+    label: "Sub-category",
+    required: false,
+    aliases: [
+      "sub_category",
+      "subcategory",
+      "sub category",
+      "project_sub_category",
+      "project sub category",
+      "sub_category_name",
     ],
   },
 ];
@@ -197,12 +218,7 @@ export async function importProjectsWorkbook(
     );
     const validRows: Array<{
       rowNumber: number;
-      data: {
-        projectName: string;
-        customerName: string;
-        jobNo: string;
-        soNo: string;
-      };
+      data: ProjectInput;
     }> = [];
 
     for (const row of workbook.rows) {
@@ -242,6 +258,11 @@ export async function importProjectsWorkbook(
     });
     const existingJobNos = new Set(existing.map((project) => project.jobNo));
 
+    // Do not clear existing category data when importing an old template
+    // that has no classification columns. Present but blank cells clear values.
+    const hasCategory = workbook.detectedColumns.includes("category");
+    const hasSubCategory = workbook.detectedColumns.includes("subCategory");
+
     await withSerializableTransaction(
       async (transaction) => {
         for (const row of validRows) {
@@ -249,11 +270,17 @@ export async function importProjectsWorkbook(
             where: {
               jobNo: row.data.jobNo,
             },
-            create: row.data,
+            create: {
+              ...row.data,
+              category: row.data.category ?? null,
+              subCategory: row.data.subCategory ?? null,
+            },
             update: {
               projectName: row.data.projectName,
               customerName: row.data.customerName,
               soNo: row.data.soNo,
+              ...(hasCategory ? { category: row.data.category ?? null } : {}),
+              ...(hasSubCategory ? { subCategory: row.data.subCategory ?? null } : {}),
             },
           });
         }
