@@ -20,8 +20,19 @@ describe("operational summary", () => {
     const summary = summarizeOperations([row("J1", "07:00"), row("J2", "19:00")], 10);
     expect(summary).toMatchObject({ foremanCount: 1, labourCount: 1, unassignedCount: 8, dayCount: 1, nightCount: 1 });
     expect(summary.issues).toHaveLength(2);
-    expect(summary.issues.every((issue) => issue.message.includes("multiple assignments"))).toBe(true);
+    expect(summary.issues.every((issue) => issue.message.includes("multiple project assignments"))).toBe(true);
   });
+  it("does not flag a dual-role foreman as a duplicate and counts the person once", () => {
+    const summary = summarizeOperations(
+      [{ ...row("J1", "07:00"), labours: [{ employeeId: "F1" }, { employeeId: "L1" }] }],
+      3,
+    );
+    expect(summary.foremanCount).toBe(1);
+    expect(summary.labourCount).toBe(2);
+    expect(summary.unassignedCount).toBe(1);
+    expect(summary.issues).toEqual([]);
+  });
+
   it("reports incomplete timing and missing labour without negative availability", () => {
     const summary = summarizeOperations([{ ...row("J1", null), labours: [] }], 0);
     expect(summary.unassignedCount).toBe(0);

@@ -18,6 +18,7 @@ import {
 } from "@/lib/validation/schedule";
 import { ApplicationError, mapDatabaseError } from "@/server/database/errors";
 import { withSerializableTransaction } from "@/server/database/transaction";
+import { getLabourMoveRoleConflict } from "@/server/services/labour-move-roles";
 import {
   buildResourceConflictMap,
   findFirstResourceConflict,
@@ -184,7 +185,15 @@ export async function moveLabourAssignment(input: unknown): Promise<ActionResult
       const [sourceAssignment, targetSchedule, daySchedules] = await Promise.all([
         transaction.dailyScheduleLabour.findFirst({
           where: { scheduleDate, projectJobNo: value.fromProjectJobNo, employeeId: value.employeeId },
-          select: { employeeId: true },
+          select: {
+            employeeId: true,
+            dailySchedule: {
+              select: {
+                foremanEmployeeId: true,
+                driverEmployeeId: true,
+              },
+            },
+          },
         }),
         transaction.dailySchedule.findUnique({
           where: { scheduleDate_projectJobNo: { scheduleDate, projectJobNo: value.toProjectJobNo } },
@@ -203,8 +212,15 @@ export async function moveLabourAssignment(input: unknown): Promise<ActionResult
 
       if (!sourceAssignment) throw new ApplicationError("NOT_FOUND", "The labour assignment to move no longer exists.");
       if (!targetSchedule) throw new ApplicationError("NOT_FOUND", "The target schedule no longer exists.");
-      if (targetSchedule.foremanEmployeeId === value.employeeId || targetSchedule.driverEmployeeId === value.employeeId) {
-        throw new ApplicationError("CONFLICT", "The employee already has another role on the target project.");
+
+      const roleConflict = getLabourMoveRoleConflict({
+        employeeId: value.employeeId,
+        sourceForemanEmployeeId: sourceAssignment.dailySchedule.foremanEmployeeId,
+        sourceDriverEmployeeId: sourceAssignment.dailySchedule.driverEmployeeId,
+        targetDriverEmployeeId: targetSchedule.driverEmployeeId,
+      });
+      if (roleConflict) {
+        throw new ApplicationError("CONFLICT", roleConflict);
       }
 
       const conflicts = buildResourceConflictMap(
