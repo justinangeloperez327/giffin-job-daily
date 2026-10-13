@@ -39,7 +39,7 @@ export type ProjectsPageResult = PaginatedResult<
   Awaited<ReturnType<typeof listProjects>>[number]
 > & {
   search?: string;
-  sort: "projectName" | "jobNo" | "soNo";
+  sort: "projectName" | "jobNo" | "soNo" | "category" | "subCategory";
   order: "asc" | "desc";
 };
 

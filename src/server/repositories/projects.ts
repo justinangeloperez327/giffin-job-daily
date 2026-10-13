@@ -46,6 +46,18 @@ function buildProjectWhere(search?: string): Prisma.ProjectWhereInput | undefine
           mode: "insensitive",
         },
       },
+      {
+        category: {
+          contains: normalizedSearch,
+          mode: "insensitive",
+        },
+      },
+      {
+        subCategory: {
+          contains: normalizedSearch,
+          mode: "insensitive",
+        },
+      },
     ],
   };
 }
@@ -75,6 +87,8 @@ export async function listProjects({
       customerName: true,
       jobNo: true,
       soNo: true,
+      category: true,
+      subCategory: true,
       _count: {
         select: {
           dailySchedules: true,
@@ -94,6 +108,8 @@ export async function listProjectOptions() {
       customerName: true,
       jobNo: true,
       soNo: true,
+      category: true,
+      subCategory: true,
     },
     orderBy: [{ projectName: "asc" }, { jobNo: "asc" }],
     take: 2000,

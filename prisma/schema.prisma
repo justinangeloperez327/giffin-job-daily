@@ -10,8 +10,10 @@ datasource db {
 model Project {
   projectName  String @map("project_name")
   customerName String @map("customer_name")
-  jobNo        String @id @map("job_no")
-  soNo         String @map("so_no")
+  jobNo        String  @id @map("job_no")
+  soNo         String  @map("so_no")
+  category     String? @map("category")
+  subCategory  String? @map("sub_category")
 
   dailySchedules DailySchedule[]
 

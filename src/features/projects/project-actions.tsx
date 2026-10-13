@@ -47,6 +47,8 @@ export type ProjectActionRecord = {
   customerName: string;
   jobNo: string;
   soNo: string;
+  category: string | null;
+  subCategory: string | null;
   scheduleCount: number;
 };
 
@@ -141,7 +143,7 @@ export function ProjectActions({ project }: { project: ProjectActionRecord }) {
           <SheetHeader className="border-b px-3 py-3 pr-12">
             <SheetTitle>Edit Project</SheetTitle>
             <p className="text-sm text-muted-foreground">
-              Update customer, project, job number, or sales order information.
+              Update project details, classification, and job information.
             </p>
           </SheetHeader>
 
