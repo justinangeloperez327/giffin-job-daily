@@ -44,9 +44,9 @@ function displayTiming(
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border bg-card p-3">
+    <div className="border-l-2 border-l-foreground/25 bg-card px-3 py-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
     </div>
   );
 }
@@ -79,7 +79,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-3">
       <PageHeader
-        title="Dashboard"
+        title="Workforce overview"
+        description="Today’s assignments, resource availability and upcoming work."
         actions={
           <Link
             href={`/daily-schedule?date=${encodeURIComponent(today)}`}
@@ -91,7 +92,7 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 2xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-px overflow-hidden border bg-border lg:grid-cols-3 2xl:grid-cols-6">
         <Metric label="Projects today" value={data.today.projectCount} />
         <Metric label="Foremen assigned" value={operations.foremanCount} />
         <Metric label="Labours assigned" value={operations.labourCount} />
@@ -103,7 +104,7 @@ export default async function DashboardPage() {
       <section className="overflow-hidden rounded-none border bg-card">
         <div className="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-sm font-semibold">Today&apos;s Plan</h2>
+            <h2 className="text-sm font-semibold">Today&apos;s workforce plan</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {data.today.foremanCount} foremen · {data.today.driverCount} drivers
               {" · "}

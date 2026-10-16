@@ -84,13 +84,13 @@ function Navigation({
           <Link
             href={item.href}
             className={cn(
-              "flex h-9 items-center rounded-none text-sm transition-colors",
+              "flex min-h-11 items-center rounded-none border-l-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
               collapsed && !mobile
                 ? "justify-center px-0"
                 : "gap-2.5 px-3",
               active
-                ? "bg-accent font-medium text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
+                ? "border-foreground bg-accent font-semibold text-accent-foreground"
+                : "border-transparent text-muted-foreground hover:bg-accent/70 hover:text-foreground",
             )}
             aria-current={active ? "page" : undefined}
             title={collapsed && !mobile ? item.name : undefined}
@@ -143,7 +143,7 @@ export function AppShell({
     <div className="min-h-screen">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden shrink-0 border-r bg-card transition-[width] duration-200 md:flex md:flex-col",
+          "fixed inset-y-0 left-0 z-30 hidden shrink-0 border-r bg-muted/30 transition-[width] duration-200 md:flex md:flex-col",
           sidebarCollapsed ? "w-16" : "w-60",
         )}
       >
@@ -155,8 +155,8 @@ export function AppShell({
         >
           {!sidebarCollapsed && (
             <Link href="/" className="min-w-0">
-              <span className="block truncate text-sm font-semibold">
-                Giffin Job Daily
+              <span className="block truncate text-sm font-bold tracking-[0.16em]">
+                GIFFIN
               </span>
               <span className="block truncate text-xs text-muted-foreground">
                 Workforce Scheduling
@@ -183,6 +183,7 @@ export function AppShell({
         </div>
 
         <div className={cn("flex-1 overflow-y-auto", sidebarCollapsed ? "p-2" : "p-3")}>
+          <p className={cn("mb-3 px-3 text-[11px] font-medium text-muted-foreground", sidebarCollapsed && "sr-only")}>WORKFORCE PLANNING</p>
           <Navigation
             pathname={pathname}
             role={currentUser.role}
@@ -216,7 +217,7 @@ export function AppShell({
           sidebarCollapsed ? "md:pl-16" : "md:pl-60",
         )}
       >
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-background px-3">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-card px-3 sm:px-5">
           <div className="flex items-center gap-2 md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -246,8 +247,10 @@ export function AppShell({
             </Link>
           </div>
 
-          <div className="hidden text-sm text-muted-foreground md:block">
-            {pageContext}
+          <div className="hidden items-center gap-3 text-xs md:flex">
+            <span className="text-muted-foreground">Workspace</span>
+            <span aria-hidden="true" className="text-muted-foreground">/</span>
+            <span className="font-medium">{pageContext}</span>
           </div>
 
           <div className="flex items-center gap-1">
@@ -284,7 +287,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1920px] px-3 py-3">
+        <main className="mx-auto w-full max-w-[1920px] px-3 py-4 sm:px-5 sm:py-5">
           {children}
         </main>
       </div>

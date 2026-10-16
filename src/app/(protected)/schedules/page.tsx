@@ -64,6 +64,7 @@ export default async function SchedulesPage() {
     <div className="space-y-3">
       <PageHeader
         title="Schedules"
+        description="Daily workforce plans, grouped by date. Open a plan to manage assignments."
         actions={
           <Button asChild>
             <Link href="/daily-schedule">
@@ -90,9 +91,8 @@ export default async function SchedulesPage() {
 
             return (
               <section key={date} className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-border" />
-                  <div className="shrink-0 text-xs font-medium text-muted-foreground">
+                <div className="flex items-center gap-3 border-l-2 border-foreground pl-3 py-1">
+                  <div className="text-sm font-semibold">
                     {displayScheduleDate(dateValue)}
                   </div>
                   <div className="h-px flex-1 bg-border" />
@@ -123,14 +123,14 @@ export default async function SchedulesPage() {
                         <Link
                           key={schedule.projectJobNo}
                           href={`/daily-schedule?date=${date}`}
-                          className="min-h-24 border bg-background p-3 transition-colors hover:bg-muted/40"
+                          className="min-w-0 border border-dashed bg-background p-3 transition-colors hover:border-solid hover:border-foreground/40 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground">
-                                Customer
+                                Client
                               </p>
-                              <p className="truncate text-sm font-medium">
+                              <p className="break-words text-sm font-medium">
                                 {schedule.project.customerName}
                               </p>
                             </div>
@@ -151,17 +151,21 @@ export default async function SchedulesPage() {
                             )}
                           </div>
 
-                          <p className="mt-2 text-sm font-medium leading-5">{schedule.project.projectName}</p>
-                          <div className="mt-2 space-y-1">
+                          <p className="mt-2 break-words text-sm font-semibold leading-5">{schedule.project.projectName}</p>
+                          <div className="mt-3 space-y-2 border-t border-dashed pt-2">
                             <div className="flex items-center justify-between gap-2 text-xs">
                               <span className="text-muted-foreground">Foreman</span>
-                              <span className="truncate font-medium">
+                              <span className="min-w-0 break-words text-right font-medium">
                                 {schedule.foreman.employeeName}
                               </span>
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
-                              <span className="text-muted-foreground">Job No.</span>
-                              <span className="truncate">{schedule.project.jobNo}</span>
+                              <span className="shrink-0 text-muted-foreground">Job No.</span>
+                              <span className="break-all text-right font-mono">{schedule.project.jobNo}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="shrink-0 text-muted-foreground">SO No.</span>
+                              <span className="break-all text-right font-mono">{schedule.project.soNo || "—"}</span>
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
                               <span className="text-muted-foreground">Labours</span>
