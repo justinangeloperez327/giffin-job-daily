@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, UsersRound } from "lucide-react";
+import { GripVertical, Search, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ export function ResourcePoolPanel({
   pending,
   onAssignForeman,
   onAssignLabours,
+  onLabourDragStart,
+  onLabourDragEnd,
   onReassignLabour,
   onViewAssignment,
 }: {
@@ -38,6 +40,8 @@ export function ResourcePoolPanel({
   pending: boolean;
   onAssignForeman: (employeeId: string) => void;
   onAssignLabours: (employeeIds: string[]) => void;
+  onLabourDragStart: (employeeId: string) => void;
+  onLabourDragEnd: () => void;
   onReassignLabour: (employeeId: string, fromRowKey: string) => void;
   onViewAssignment: (rowKey: string) => void;
 }) {
@@ -368,6 +372,13 @@ export function ResourcePoolPanel({
             </div>
           </div>
 
+          {selectedLabel ? (
+            <p className="border-b px-3 py-2 text-xs text-muted-foreground">
+              Drag an available labour to a project’s Labours column, or use
+              the checkboxes to assign to the selected project.
+            </p>
+          ) : null}
+
           <div className="flex-1 overflow-y-auto p-2">
             {!selectedLabel ? (
               <div className="px-3 py-8 text-center text-sm text-muted-foreground">
@@ -382,9 +393,23 @@ export function ResourcePoolPanel({
                   return (
                     <div
                       key={labour.employeeId}
+                      draggable={selectable && !pending}
+                      onDragStart={(event) => {
+                        if (!selectable || pending) {
+                          event.preventDefault();
+                          return;
+                        }
+
+                        event.dataTransfer.effectAllowed = "copy";
+                        event.dataTransfer.setData("text/plain", labour.employeeId);
+                        onLabourDragStart(labour.employeeId);
+                      }}
+                      onDragEnd={onLabourDragEnd}
+                      title={selectable ? `Drag ${labour.employeeName} to a project` : undefined}
                       className={cn(
                         "border-b px-2 py-2",
                         (labour.selected || staged) && "bg-accent/35",
+                        selectable && !pending && "cursor-grab active:cursor-grabbing hover:bg-muted/50",
                       )}
                     >
                       <div className="flex items-start gap-2">
@@ -448,6 +473,9 @@ export function ResourcePoolPanel({
                             ) : null}
                           </div>
                         </div>
+                        {selectable && !pending ? (
+                          <GripVertical className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                        ) : null}
                       </div>
                     </div>
                   );
