@@ -133,6 +133,12 @@ function LabourCell({
   resources,
   pending,
   disabled,
+  draggedEmployeeId,
+  dropEnabled,
+  dropActive,
+  onDropHover,
+  onDropLeave,
+  onDropLabour,
   onRemove,
   onManage,
 }: {
@@ -140,13 +146,46 @@ function LabourCell({
   resources: ScheduleResource[];
   pending: boolean;
   disabled?: boolean;
+  draggedEmployeeId: string | null;
+  dropEnabled: boolean;
+  dropActive: boolean;
+  onDropHover: () => void;
+  onDropLeave: () => void;
+  onDropLabour: (employeeId: string) => void;
   onRemove: (employeeId: string) => void;
   onManage: () => void;
 }) {
   const visible = employeeIds.slice(0, 2);
 
   return (
-    <div className="space-y-1">
+    <div
+      className={cn(
+        "min-h-12 space-y-1 border border-dashed border-transparent px-1 py-1 transition-colors",
+        draggedEmployeeId && dropEnabled && "border-border bg-muted/20",
+        dropActive && dropEnabled && "border-primary bg-primary/10",
+      )}
+      onDragOver={(event) => {
+        if (!dropEnabled) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        onDropHover();
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          onDropLeave();
+        }
+      }}
+      onDrop={(event) => {
+        if (!dropEnabled || !draggedEmployeeId) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onDropLeave();
+        const employeeId = event.dataTransfer.getData("text/plain");
+        if (employeeId === draggedEmployeeId) {
+          onDropLabour(employeeId);
+        }
+      }}
+    >
       <div className="flex items-center justify-between gap-1">
         <span className="text-sm font-medium tabular-nums">
           {employeeIds.length} assigned
@@ -164,6 +203,10 @@ function LabourCell({
           {employeeIds.length > 0 ? "Manage" : "Assign"}
         </button>
       </div>
+
+      {draggedEmployeeId && dropEnabled && employeeIds.length === 0 ? (
+        <p className="text-xs font-medium text-primary">Drop labour here</p>
+      ) : null}
 
       {visible.length > 0 ? (
         <div className="space-y-0.5">
@@ -235,6 +278,8 @@ export function DailyScheduleBoard({
     firstSavedKey,
   );
   const [resourcePoolOpen, setResourcePoolOpen] = useState(false);
+  const [draggedLabourId, setDraggedLabourId] = useState<string | null>(null);
+  const [dragOverRowKey, setDragOverRowKey] = useState<string | null>(null);
   const [poolTab, setPoolTab] = useState<"foremen" | "labours">("foremen");
   const [deletingJobNo, setDeletingJobNo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -252,6 +297,8 @@ export function DailyScheduleBoard({
     setExpandedLogisticsRows(new Set());
     setSelectedRowKey(firstSavedKey);
     setResourcePoolOpen(false);
+    setDraggedLabourId(null);
+    setDragOverRowKey(null);
     setPoolTab("foremen");
   }, [selectedDate, firstSavedKey]);
 
@@ -692,6 +739,51 @@ export function DailyScheduleBoard({
     setSelectedRowKey(rowKey);
   }
 
+  function canDropLabour(rowKey: string, employeeId: string) {
+    if (pending) return false;
+
+    if (rowKey.startsWith(SAVED_ROW_PREFIX)) {
+      const projectJobNo = rowKey.slice(SAVED_ROW_PREFIX.length);
+      const schedule = initialSchedules.find(
+        (item) => item.projectJobNo === projectJobNo,
+      );
+      if (!schedule) return false;
+
+      return labourOptionsFor(
+        rowKey,
+        projectJobNo,
+        schedule.labourEmployeeIds,
+        schedule.foremanEmployeeId,
+        editableFieldsForSaved(schedule).driverEmployeeId,
+      ).some((option) =>
+        option.employeeId === employeeId && option.available && !option.selected,
+      );
+    }
+
+    const draft = draftRows.find((row) => row.id === rowKey);
+    if (!draft?.projectJobNo) return false;
+
+    return labourOptionsFor(
+      rowKey,
+      draft.projectJobNo,
+      draft.labourEmployeeIds,
+      draft.foremanEmployeeId,
+      draft.driverEmployeeId,
+    ).some((option) =>
+      option.employeeId === employeeId && option.available && !option.selected,
+    );
+  }
+
+  function dropLabourOnRow(rowKey: string, employeeId: string) {
+    if (!canDropLabour(rowKey, employeeId)) {
+      toast.error("This employee cannot be assigned to this project on this date.");
+      return;
+    }
+
+    setSelectedRowKey(rowKey);
+    assignLabours(rowKey, [employeeId]);
+  }
+
   function assignLabours(rowKey: string, employeeIds: string[]) {
     if (employeeIds.length === 0) {
       return;
@@ -1097,6 +1189,14 @@ export function DailyScheduleBoard({
                     assignLabours(selectedRowKey, employeeIds);
                   }
                 }}
+                onLabourDragStart={(employeeId) => {
+                  setDraggedLabourId(employeeId);
+                  setDragOverRowKey(null);
+                }}
+                onLabourDragEnd={() => {
+                  setDraggedLabourId(null);
+                  setDragOverRowKey(null);
+                }}
                 onReassignLabour={reassignLabour}
                 onViewAssignment={setSelectedRowKey}
               />
@@ -1296,7 +1396,13 @@ export function DailyScheduleBoard({
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
                                 pending={pending}
-                                 onManage={() => openResourcePool(rowKey, "labours")}
+                                draggedEmployeeId={draggedLabourId}
+                                dropEnabled={Boolean(draggedLabourId && canDropLabour(rowKey, draggedLabourId))}
+                                dropActive={dragOverRowKey === rowKey}
+                                onDropHover={() => setDragOverRowKey(rowKey)}
+                                onDropLeave={() => setDragOverRowKey((key) => key === rowKey ? null : key)}
+                                onDropLabour={(employeeId) => dropLabourOnRow(rowKey, employeeId)}
+                                onManage={() => openResourcePool(rowKey, "labours")}
                                 onRemove={(employeeId) =>
                                   removeLabour(rowKey, employeeId)
                                 }
@@ -1487,8 +1593,14 @@ export function DailyScheduleBoard({
                                 employeeIds={row.labourEmployeeIds}
                                 resources={resources}
                                 pending={pending}
-                                 disabled={!row.projectJobNo}
-                                 onManage={() => openResourcePool(row.id, "labours")}
+                                disabled={!row.projectJobNo}
+                                draggedEmployeeId={draggedLabourId}
+                                dropEnabled={Boolean(draggedLabourId && canDropLabour(row.id, draggedLabourId))}
+                                dropActive={dragOverRowKey === row.id}
+                                onDropHover={() => setDragOverRowKey(row.id)}
+                                onDropLeave={() => setDragOverRowKey((key) => key === row.id ? null : key)}
+                                onDropLabour={(employeeId) => dropLabourOnRow(row.id, employeeId)}
+                                onManage={() => openResourcePool(row.id, "labours")}
                                 onRemove={(employeeId) =>
                                   removeLabour(row.id, employeeId)
                                 }
@@ -1664,6 +1776,14 @@ export function DailyScheduleBoard({
               if (selectedRowKey) {
                 assignLabours(selectedRowKey, employeeIds);
               }
+            }}
+            onLabourDragStart={(employeeId) => {
+              setDraggedLabourId(employeeId);
+              setDragOverRowKey(null);
+            }}
+            onLabourDragEnd={() => {
+              setDraggedLabourId(null);
+              setDragOverRowKey(null);
             }}
             onReassignLabour={reassignLabour}
             onViewAssignment={setSelectedRowKey}
